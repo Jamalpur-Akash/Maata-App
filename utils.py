@@ -36,7 +36,7 @@ def display_posts():
 
         if row['media_path']:
             if row['media_path'].endswith(('jpg', 'png', 'jpeg')):
-                st.image(row['media_path'], use_column_width=True)
+                st.image(row['media_path'], use_container_width=True)
             elif row['media_path'].endswith('mp4'):
                 st.video(row['media_path'])
 
