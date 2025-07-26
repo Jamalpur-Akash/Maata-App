@@ -44,7 +44,7 @@ elif page == "➕ Post":
             save_post(st.session_state.username, caption, media_file)
             st.success("✅ Posted successfully!")
 
-elif page == "👤 Profile":
+elif page == "👤 ప్రొఫైల్":
     st.subheader(f"👋 Hello, {st.session_state.username}")
     if st.button("Logout"):
         st.session_state.logged_in = False
