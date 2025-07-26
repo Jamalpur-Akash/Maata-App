@@ -8,8 +8,8 @@ def login_signup():
 
     with tab1:
         st.markdown("### 🔐 *లాగిన్*")
-        uname = st.text_input("వినియోగదారుని పేరు")
-        pwd = st.text_input("పాస్వర్డ్", type="password")
+        uname = st.text_input("**వినియోగదారుని పేరు**")
+        pwd = st.text_input("**పాస్వర్డ్**", type="password")
         if st.button("లాగిన్"):
             if USERS.get(uname) == pwd:
                 st.session_state.logged_in = True
