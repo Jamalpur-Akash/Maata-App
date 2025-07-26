@@ -4,24 +4,24 @@ import streamlit as st
 USERS = {"test": "1234"}
 
 def login_signup():
-    tab1, tab2 = st.tabs(["🔐 Login", "🆕 Signup"])
+    tab1, tab2 = st.tabs(["🔐 లాగిన్"", "🆕 సైన్అప్"])
 
     with tab1:
-        uname = st.text_input("Username")
-        pwd = st.text_input("Password", type="password")
-        if st.button("Login"):
+        uname = st.text_input("వినియోగదారుని పేరు")
+        pwd = st.text_input("పాస్వర్డ్", type="password")
+        if st.button("లాగిన్"):
             if USERS.get(uname) == pwd:
                 st.session_state.logged_in = True
                 st.session_state.username = uname
             else:
-                st.error("Invalid credentials")
+                st.error("తప్పు లాగిన్ వివరాలు")
 
     with tab2:
-        new_user = st.text_input("New username")
-        new_pwd = st.text_input("New password", type="password")
-        if st.button("Create Account"):
+        new_user = st.text_input("కొత్త వినియోగదారుని పేరు")
+        new_pwd = st.text_input("కొత్త పాస్వర్డ్", type="password")
+        if st.button("ఖాతా సృష్టించండి"):
             if new_user in USERS:
-                st.warning("Username already exists!")
+                st.warning("ఈ వినియోగదారుని పేరు ముందు నుంచే ఉంది!")
             else:
                 USERS[new_user] = new_pwd
-                st.success("Account created! Please login.")
+                st.success("ఖాతా సృష్టించబడింది! దయచేసి లాగిన్ అవ్వండి.")
