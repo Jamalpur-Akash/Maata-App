@@ -25,3 +25,12 @@ def login_signup():
             else:
                 USERS[new_user] = new_pwd
                 st.success("ఖాతా సృష్టించబడింది! దయచేసి లాగిన్ అవ్వండి.")
+
+with tab1:
+    st.markdown("### 🔐 *లాగిన్*")
+    # your login form
+
+with tab2:
+    st.markdown("### 🆕 *సైన్అప్*")
+    # your signup form
+
