@@ -41,7 +41,9 @@ st.markdown("""
 
  
 st.markdown("""<h1 style=' text-align: center;
-                           color:yellow;
+                           font-size: 28px;
+                           
+                           
                            font-family: "Noto Sans Telugu", "Segoe UI", "sans-serif";'>
                            స్థానిక వార్తలు మరియు కథలు</h1>""", unsafe_allow_html=True)
 
