@@ -4,7 +4,7 @@ import streamlit as st
 USERS = {"test": "1234"}
 
 def login_signup():
-    tab1, tab2 = st.tabs(["🔐 లాగిన్"", "🆕 సైన్అప్"])
+    tab1, tab2 = st.tabs(["🔐 లాగిన్", "🆕 సైన్అప్"])
 
     with tab1:
         uname = st.text_input("వినియోగదారుని పేరు")
