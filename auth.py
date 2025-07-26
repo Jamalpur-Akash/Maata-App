@@ -8,7 +8,7 @@ def login_signup():
 
     with tab1:
         # Username
-        st.markdown("<label style=' margin:12px; font-weight: bold;'>వినియోగదారుని పేరు</label>", unsafe_allow_html=True)
+        st.markdown("<label style='font-weight: bold;'>వినియోగదారుని పేరు</label>", unsafe_allow_html=True)
         uname = st.text_input("", key="username")
 
         st.write("")  # Adds space between inputs
