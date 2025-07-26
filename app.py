@@ -40,7 +40,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
  
-st.markdown("##### <center>Local News & Stories in Your Language</center>", unsafe_allow_html=True)
+st.markdown("##### <center>స్థానిక వార్తలు మరియు కథలు</center>", unsafe_allow_html=True)
 
 # ✅ Authentication
 if not st.session_state.logged_in:
