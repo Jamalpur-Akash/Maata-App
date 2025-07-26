@@ -34,21 +34,23 @@ if page == "🏠 Home":
     st.subheader("📢 Community Posts")
     display_posts()
 
-elif page == "➕ Post":
+ elif page == "➕ Post":
     st.subheader("📝 Create a Post")
+    
     with st.form("new_post"):
         caption = st.text_area("What's happening?")
         media_file = st.file_uploader("Upload image/video", type=["png", "jpg", "jpeg", "mp4"])
         submitted = st.form_submit_button("Post")
 
-         if submitted:
-             if not caption.strip():
-                 st.warning("⚠️ Please enter a caption.")
-             elif not media_file:
-                 st.warning("⚠️ Please upload an image or video.")
-             else:
-                  save_post(st.session_state.username, caption, media_file)
-                  st.success("✅ Posted successfully!")
+        if submitted:
+            if not caption.strip():
+                st.warning("⚠️ Please enter a caption.")
+            elif not media_file:
+                st.warning("⚠️ Please upload an image or video.")
+            else:
+                save_post(st.session_state.username, caption, media_file)
+                st.success("✅ Posted successfully!")
+
 
 elif page == "👤 Profile":
     st.subheader(f"👋 Hello, {st.session_state.username}")
