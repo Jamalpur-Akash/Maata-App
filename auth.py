@@ -8,14 +8,14 @@ def login_signup():
 
     with tab1:
         # Username
-        st.markdown("<label style='font-weight: bold; margin-bottom: 4px;'>వినియోగదారుని పేరు</label>", unsafe_allow_html=True)
+        st.markdown("<label style='font-weight: bold; margin-bottom: 2px;'>వినియోగదారుని పేరు</label>", unsafe_allow_html=True)
         uname = st.text_input("", key="username")
 
         # Small spacer
-        st.markdown("<div style='margin-bottom: 4px;'></div>", unsafe_allow_html=True)
+        st.markdown("<div style='margin-bottom: 2px;'></div>", unsafe_allow_html=True)
 
         # Password
-        st.markdown("<label style='font-weight: bold; margin-bottom: 4px;'>పాస్వర్డ్</label>", unsafe_allow_html=True)
+        st.markdown("<label style='font-weight: bold; margin-bottom: 2px;'>పాస్వర్డ్</label>", unsafe_allow_html=True)
         pwd = st.text_input("", type="password", key="password")
 
         if st.button("లాగిన్"):
