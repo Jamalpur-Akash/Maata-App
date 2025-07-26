@@ -22,7 +22,7 @@ st.markdown("""
 <h1 style='
     text-align: center;
     color: #0077cc;
-    font-family: "Segoe UI", "Roboto", "Helvetica Neue", sans-serif;
+     font-family: "Noto Sans Telugu", "Segoe UI", "sans-serif";
     font-size: 48px;
     margin-bottom: 10px;
     text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
