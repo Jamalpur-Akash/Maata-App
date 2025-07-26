@@ -12,7 +12,7 @@ def login_signup():
         uname = st.text_input("", key="username")
 
         # Small spacer
-        st.markdown("<div style='margin-bottom: 8px;'></div>", unsafe_allow_html=True)
+        st.markdown("<div style='margin-bottom: 4px;'></div>", unsafe_allow_html=True)
 
         # Password
         st.markdown("<label style='font-weight: bold; margin-bottom: 4px;'>పాస్వర్డ్</label>", unsafe_allow_html=True)
