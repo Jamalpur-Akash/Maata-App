@@ -26,7 +26,7 @@ st.markdown("""
     font-size: 48px;
     margin-bottom: 10px;
     text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
-'>Maata 📰</h1>
+'>మాట 📰</h1>
 """, unsafe_allow_html=True)
 
  
