@@ -20,7 +20,7 @@ def login_signup():
          if USERS.get(uname) == pwd:
            st.session_state.logged_in = True
            st.session_state.username = uname
-          else:
+         else:
             st.error("తప్పు లాగిన్ వివరాలు")
 
         
