@@ -19,6 +19,10 @@ if 'logged_in' not in st.session_state:
 
 # ✅ App header
 st.markdown("""
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Telugu&display=swap" rel="stylesheet">
+""", unsafe_allow_html=True)
+
+st.markdown("""
 <h1 style='
     text-align: center;
     color: #0077cc;
