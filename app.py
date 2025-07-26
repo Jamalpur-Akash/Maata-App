@@ -19,6 +19,14 @@ if 'logged_in' not in st.session_state:
 
 # ✅ App header
   
+st.markdown("""
+<link href="https://fonts.googleapis.com/css2?family=Baloo+Tammudu+2&display=swap" rel="stylesheet">
+<style>
+body, h1, h2, input, .stButton {
+    font-family: 'Baloo Tammudu 2', sans-serif !important;
+}
+</style>
+""", unsafe_allow_html=True)
 
 st.markdown("""
 <h1 style='
