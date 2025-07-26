@@ -7,10 +7,10 @@ def login_signup():
 
     with tab1:
         st.markdown("### 🔐 **లాగిన్**")
-        uname = st.text_input("🔑 వినియోగదారుని పేరు (Username)", key="login_username")
-        pwd = st.text_input("🔒 పాస్వర్డ్ (Password)", type="password", key="login_password")
+        uname = st.text_input("🔑 **వినియోగదారుని పేరు (Username)**", key="login_username")
+        pwd = st.text_input("🔒 **పాస్వర్డ్ (Password)**", type="password", key="login_password")
 
-        if st.button("లాగిన్"):
+        if st.button("**లాగిన్**"):
             if USERS.get(uname) == pwd:
                 st.session_state.logged_in = True
                 st.session_state.username = uname
@@ -19,10 +19,10 @@ def login_signup():
 
     with tab2:
         st.markdown("### 🆕 **సైన్అప్**")
-        new_user = st.text_input("👤 కొత్త వినియోగదారుని పేరు (New Username)", key="signup_username")
-        new_pwd = st.text_input("🔐 కొత్త పాస్వర్డ్ (New Password)", type="password", key="signup_password")
+        new_user = st.text_input("👤 **కొత్త వినియోగదారుని పేరు (New Username)**", key="signup_username")
+        new_pwd = st.text_input("🔐 **కొత్త పాస్వర్డ్ (New Password)**", type="password", key="signup_password")
 
-        if st.button("ఖాతా సృష్టించండి"):
+        if st.button("**ఖాతా సృష్టించండి**"):
             if new_user in USERS:
                 st.warning("⚠ ఈ వినియోగదారు ఇప్పటికే ఉంది! (Username already exists!)")
             else:
