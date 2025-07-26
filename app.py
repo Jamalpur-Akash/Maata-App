@@ -34,7 +34,7 @@ if page == "🏠 Home":
     st.subheader("📢 Community Posts")
     display_posts()
 
- elif page == "➕ Post":
+elif page == "➕ Post":
     st.subheader("📝 Create a Post")
     
     with st.form("new_post"):
