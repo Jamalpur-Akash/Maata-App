@@ -18,7 +18,7 @@ def login_signup():
                 st.error("❌ తప్పు లాగిన్ వివరాలు (Invalid credentials)")
 
     with tab2:
-         st.markdown("### 🆕 **సైన్అప్**")
+        st.markdown("### 🆕 **సైన్అప్**")
         new_user = st.text_input("👤 కొత్త వినియోగదారుని పేరు (New Username)", key="signup_username")
         new_pwd = st.text_input("🔐 కొత్త పాస్వర్డ్ (New Password)", type="password", key="signup_password")
 
