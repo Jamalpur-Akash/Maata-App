@@ -40,7 +40,10 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
  
-st.markdown("##### <center>స్థానిక వార్తలు మరియు కథలు</center>", unsafe_allow_html=True)
+st.markdown("""<h1 style=' text-align: center;
+                           color:yellow;
+                           font-family: "Noto Sans Telugu", "Segoe UI", "sans-serif";'>
+                           స్థానిక వార్తలు మరియు కథలు</h1>""", unsafe_allow_html=True)
 
 # ✅ Authentication
 if not st.session_state.logged_in:
