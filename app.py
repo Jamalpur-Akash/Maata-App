@@ -18,7 +18,18 @@ if 'logged_in' not in st.session_state:
     st.session_state.logged_in = False
 
 # ✅ App header
-st.markdown("<h1 style='text-align: center;'>Maata 📰</h1>", unsafe_allow_html=True)
+st.markdown("""
+<h1 style='
+    text-align: center;
+    color: #0077cc;
+    font-family: "Segoe UI", "Roboto", "Helvetica Neue", sans-serif;
+    font-size: 48px;
+    margin-bottom: 10px;
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
+'>Maata 📰</h1>
+""", unsafe_allow_html=True)
+
+ 
 st.markdown("##### <center>Local News & Stories in Your Language</center>", unsafe_allow_html=True)
 
 # ✅ Authentication
