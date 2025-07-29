@@ -75,6 +75,20 @@ elif page == "➕ Post":
             else:
                 save_post(st.session_state.username, caption, media_file)
                 st.success("✅ Posted successfully!")
+                submitted = st.form_submit_button("Post")
+if submitted:
+    if not caption.strip():
+        st.warning("⚠️ Please enter a caption.")
+    elif not media_file:
+        st.warning("⚠️ Please upload an image or video.")
+    else:
+        with st.spinner("Uploading and saving post..."):
+            # Simulate a delay for saving
+            import time
+            time.sleep(2)
+            save_post(st.session_state.username, caption, media_file)
+            st.success("✅ Posted successfully!")
+        st.balloons() # A fun little animation on success
         elif page == "🧑‍💼 Profile":
             st.subheader(f"👋 Hello, {st.session_state.username}")
             if st.button("Logout"):
