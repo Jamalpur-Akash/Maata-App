@@ -160,7 +160,7 @@ def login_signup():
             if ((users_df['username'] == username) & (users_df['password'] == password)).any():
                 st.session_state.logged_in = True
                 st.session_state.username = username
-                st.experimental_rerun()
+                st.stop()
             else:
                 st.error("తప్పు లాగిన్ వివరాలు.")
     else:
