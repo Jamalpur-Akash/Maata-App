@@ -298,9 +298,10 @@ def login_signup():
 
     if st.session_state.auth_view == "login":
         st.markdown("#### ప్రస్తుత వినియోగదారు లాగిన్")
-        login_username = st.text_input("వినియోగదారు పేరు (లాగిన్)", key="login_username_form") # Unique key
-        login_password = st.text_input("పాస్‌వర్డ్ (లాగిన్)", type="password", key="login_password_form") # Unique key
-        if st.button("లాగిన్", key="do_login_button"): # Unique key
+        # Ensure unique keys, especially important when elements are conditionally rendered
+        login_username = st.text_input("వినియోగదారు పేరు (లాగిన్)", key="login_username_form")
+        login_password = st.text_input("పాస్‌వర్డ్ (లాగిన్)", type="password", key="login_password_form")
+        if st.button("లాగిన్", key="do_login_button"):
             users_df = pd.read_csv(USER_CSV)
             user_found = users_df[(users_df['username'] == login_username) & (users_df['password'] == login_password)]
             if not user_found.empty:
@@ -312,10 +313,11 @@ def login_signup():
 
     elif st.session_state.auth_view == "signup":
         st.markdown("#### కొత్త వినియోగదారు సైన్ అప్")
-        signup_username = st.text_input("వినియోగదారు పేరు (సైన్ అప్)", key="signup_username_form") # Unique key
-        signup_password = st.text_input("పాస్‌వర్డ్ (సైన్ అప్)", type="password", key="signup_password_form") # Unique key
-        signup_confirm_password = st.text_input("పాస్‌వర్డ్ నిర్ధారించండి", type="password", key="signup_confirm_password_form") # Unique key
-        if st.button("సైన్ అప్", key="do_signup_button"): # Unique key
+        # Ensure unique keys
+        signup_username = st.text_input("వినియోగదారు పేరు (సైన్ అప్)", key="signup_username_form")
+        signup_password = st.text_input("పాస్‌వర్డ్ (సైన్ అప్)", type="password", key="signup_password_form")
+        signup_confirm_password = st.text_input("పాస్‌వర్డ్ నిర్ధారించండి", type="password", key="signup_confirm_password_form")
+        if st.button("సైన్ అప్", key="do_signup_button"):
             if not signup_username or not signup_password or not signup_confirm_password:
                 st.session_state.login_status_message = "దయచేసి అన్ని సైన్-అప్ ఫీల్డ్‌లను పూరించండి."
             elif signup_password != signup_confirm_password:
@@ -355,12 +357,13 @@ else:
             col_caption, col_media = st.columns([2, 1])
 
             with col_caption:
-                # --- Simplified Caption Input (removed paste from clipboard) ---
+                # --- Simplified Caption Input (Removed paste from clipboard related code) ---
                 caption = st.text_area(
                     "ఏం జరుగుతోంది?", # "What's happening?"
                     height=150,
                     max_chars=500,
                     help="మీ ఆలోచనలు, భావాలు లేదా వార్తలను పంచుకోండి (గరిష్టంగా 500 అక్షరాలు)."
+                    # The 'value' parameter is not explicitly set here, letting Streamlit manage it naturally.
                 )
 
                 if caption: # Character count based on the main caption text area
@@ -390,9 +393,6 @@ else:
             submitted = st.form_submit_button("పోస్ట్ చేయండి")
 
             if submitted:
-                # No need to clear clipboard_paste_input or current_caption_value anymore
-                # form's clear_on_submit=True will handle the text_area
-
                 if not caption.strip() and not media_file:
                     st.error("🚫 దయచేసి శీర్షికను జోడించండి లేదా భాగస్వామ్యం చేయడానికి చిత్రం/వీడియోను అప్‌లోడ్ చేయండి.")
                 elif not caption.strip():
@@ -445,4 +445,4 @@ else:
 
 
         st.markdown("---")
-        st.markdown("#### మీ ఇటీవల
+        st.markdown("#### మీ ఇటీవలి పోస్ట్‌
