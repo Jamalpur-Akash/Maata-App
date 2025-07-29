@@ -349,7 +349,7 @@ else:
                     "క్లిప్‌బోర్డ్ నుండి ఇక్కడ పేస్ట్ చేయండి (Ctrl+V/Cmd+V)",
                     key="clipboard_paste_input"
                 )
-                if st.button("శీర్షికకు కాపీ చేయండి", key="copy_to_caption"):
+                if st.form_submit_button("శీర్షికకు కాపీ చేయండి", key="copy_to_caption"):
                     if pasted_text:
                         st.session_state.current_caption_value = pasted_text
                         st.info("క్లిప్‌బోర్డ్ నుండి శీర్షికకు కాపీ చేయబడింది.")
