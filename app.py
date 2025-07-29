@@ -445,4 +445,10 @@ else:
                 users_df.loc[users_df['username'] == st.session_state.username, 'dob'] = new_dob
                 users_df.to_csv(USER_CSV, index=False)
                 st.success("✅ ప్రొఫైల్ విజయవంతంగా నవీకరించబడింది!")
-                st.rerun() # Rerun to refresh displayed profile details        
+                st.rerun() # Rerun to refresh displayed profile details
+
+st.sidebar.markdown("---")
+if st.sidebar.button("🚪 లాగ్అవుట్"):
+    st.session_state.logged_in = False
+    st.session_state.username = ""
+    st.rerun()
