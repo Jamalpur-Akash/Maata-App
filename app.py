@@ -349,13 +349,13 @@ else:
                     "క్లిప్‌బోర్డ్ నుండి ఇక్కడ పేస్ట్ చేయండి (Ctrl+V/Cmd+V)",
                     key="clipboard_paste_input"
                 )
-                if st.form_submit_button("శీర్షికకు కాపీ చేయండి", key="copy_to_caption"):
+                submitted = st.form_submit_button("శీర్షికకు కాపీ చేయండి", key="copy_to_caption")
+                if submitted:
                     if pasted_text:
                         st.session_state.current_caption_value = pasted_text
                         st.info("క్లిప్‌బోర్డ్ నుండి శీర్షికకు కాపీ చేయబడింది.")
                     else:
-                        st.warning("పేస్ట్ చేయడానికి టెక్స్ట్ బాక్స్ ఖాళీగా ఉంది.")
-
+                        st.warning("పేస్ట్ చేయడానికి టెక్స్ట్ బాక్స్ ఖాళీగా ఉంది.")                                        
                 if 'current_caption_value' not in st.session_state:
                     st.session_state.current_caption_value = ""
 
