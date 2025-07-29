@@ -8,7 +8,7 @@ from pathlib import Path
 # --- Configuration & Initial Setup ---
 
 st.set_page_config(
-    page_title="మాట - కమ్యూనిటీ",
+    page_title="మాట - కమ్యూనిటీ", # "Maata - Community"
     page_icon="👋",
     layout="centered",
     initial_sidebar_state="auto"
@@ -20,8 +20,19 @@ POSTS_CSV = STORAGE_DIR / "posts.csv"
 
 STORAGE_DIR.mkdir(parents=True, exist_ok=True)
 
+# Initialize users.csv - ADD 'about' and 'dob' columns
 if not USER_CSV.exists():
-    pd.DataFrame(columns=["username", "password", "email"]).to_csv(USER_CSV, index=False)
+    pd.DataFrame(columns=["username", "password", "email", "about", "dob"]).to_csv(USER_CSV, index=False)
+else:
+    # Ensure existing users.csv has 'about' and 'dob' columns
+    users_df_check = pd.read_csv(USER_CSV)
+    if 'about' not in users_df_check.columns:
+        users_df_check['about'] = ''
+        users_df_check.to_csv(USER_CSV, index=False)
+    if 'dob' not in users_df_check.columns:
+        users_df_check['dob'] = ''
+        users_df_check.to_csv(USER_CSV, index=False)
+
 
 if not POSTS_CSV.exists():
     pd.DataFrame(columns=["post_id", "username", "timestamp", "caption", "media_path"]).to_csv(POSTS_CSV, index=False)
@@ -51,15 +62,15 @@ def save_post(username, caption, media_file=None):
     return True
 
 def display_posts():
-    st.subheader("📢 కమ్యూనిటీ పోస్ట్‌లు")
+    st.subheader("📢 కమ్యూనిటీ పోస్ట్‌లు") # "Community Posts"
     if not POSTS_CSV.exists() or POSTS_CSV.stat().st_size == 0:
-        st.info("ఇంకా పోస్ట్‌లు లేవు! మొదట మీరే పంచుకోండి.")
+        st.info("ఇంకా పోస్ట్‌లు లేవు! మొదట మీరే పంచుకోండి.") # "No posts yet! Be the first to share something."
         return
 
     posts_df = pd.read_csv(POSTS_CSV).sort_values(by="timestamp", ascending=False)
 
     if posts_df.empty:
-        st.info("ఇంకా పోస్ట్‌లు లేవు! మొదట మీరే పంచుకోండి.")
+        st.info("ఇంకా పోస్ట్‌లు లేవు! మొదట మీరే పంచుకోండి.") # "No posts yet! Be the first to share something."
         return
 
     for index, post in posts_df.iterrows():
@@ -68,7 +79,8 @@ def display_posts():
         if post['media_path'] and os.path.exists(post['media_path']):
             file_extension = Path(post['media_path']).suffix.lower()
             if file_extension in [".png", ".jpg", ".jpeg", ".gif"]:
-                st.image(post['media_path'], use_column_width="always", caption=f"@{post['username']} ద్వారా పోస్ట్ చేయబడింది")
+                # FIX: use_column_width deprecated -> use_container_width
+                st.image(post['media_path'], use_container_width=True, caption=f"@{post['username']} ద్వారా పోస్ట్ చేయబడింది")
             elif file_extension in [".mp4", ".mov", ".avi", ".webm"]:
                 st.video(post['media_path'])
             else:
@@ -120,18 +132,16 @@ st.markdown(
 )
 
 # --- Authentication ---
-# Initialize session state variables at the top level
 if 'logged_in' not in st.session_state:
     st.session_state.logged_in = False
 if 'username' not in st.session_state:
     st.session_state.username = None
 if 'login_status_message' not in st.session_state:
-    st.session_state.login_status_message = "" # To store temporary login messages
+    st.session_state.login_status_message = ""
 
 def login_signup():
     st.subheader("🔑 లాగిన్ / సైన్ అప్")
 
-    # Display any previous login/signup status messages
     if st.session_state.login_status_message:
         if "విజయవంతంగా" in st.session_state.login_status_message or "స్వాగతం" in st.session_state.login_status_message:
             st.success(st.session_state.login_status_message)
@@ -139,7 +149,7 @@ def login_signup():
             st.error(st.session_state.login_status_message)
         else:
             st.warning(st.session_state.login_status_message)
-        st.session_state.login_status_message = "" # Clear message after displaying
+        st.session_state.login_status_message = ""
 
     col1, col2 = st.columns(2)
 
@@ -154,10 +164,8 @@ def login_signup():
                 st.session_state.logged_in = True
                 st.session_state.username = login_username
                 st.session_state.login_status_message = f"స్వాగతం, {login_username}!"
-                # No explicit rerun needed. The next full Streamlit rerun will show the main app.
             else:
                 st.session_state.login_status_message = "తప్పు వినియోగదారు పేరు లేదా పాస్‌వర్డ్."
-
 
     with col2:
         st.markdown("#### కొత్త వినియోగదారు సైన్ అప్")
@@ -174,16 +182,14 @@ def login_signup():
                 if signup_username in users_df['username'].values:
                     st.session_state.login_status_message = "వినియోగదారు పేరు ఇప్పటికే ఉంది. దయచేసి మరొకటి ఎంచుకోండి."
                 else:
-                    new_user = pd.DataFrame([{"username": signup_username, "password": signup_password, "email": ""}])
+                    new_user = pd.DataFrame([{"username": signup_username, "password": signup_password, "email": "", "about": "", "dob": ""}])
                     new_user.to_csv(USER_CSV, mode='a', header=False, index=False)
                     st.session_state.login_status_message = "ఖాతా విజయవంతంగా సృష్టించబడింది! మీరు ఇప్పుడు లాగిన్ చేయవచ్చు."
 
 # --- Main App Logic ---
-# The core logic is now entirely driven by st.session_state.logged_in
 if not st.session_state.logged_in:
     login_signup()
 else:
-    # If logged in, show the main app content
     st.sidebar.title(f"స్వాగతం, {st.session_state.username}!")
     st.sidebar.radio(
         "నావిగేషన్",
@@ -256,10 +262,43 @@ else:
 
     elif page == "👤 ప్రొఫైల్":
         st.subheader(f"👤 {st.session_state.username} యొక్క ప్రొఫైల్")
+
+        users_df = pd.read_csv(USER_CSV)
+        current_user_data = users_df[users_df['username'] == st.session_state.username].iloc[0]
+
         st.write(f"**వినియోగదారు పేరు:** {st.session_state.username}")
 
+        # Profile editing form
         st.markdown("---")
-        st.markdown("#### మీ ఇటీవలి పోస్ట్‌లు")
+        st.markdown("#### ప్రొఫైల్ వివరాలను సవరించండి") # "Edit Profile Details"
+        with st.form(key="edit_profile_form"):
+            # Fetch existing data for pre-population
+            current_about = current_user_data.get('about', '')
+            current_dob = current_user_data.get('dob', '')
+
+            new_about = st.text_area("నా గురించి (About Me)", value=current_about, height=100) # "About Me"
+            new_dob = st.text_input("పుట్టిన తేదీ (YYYY-MM-DD)", value=current_dob, help="ఉదా: 1990-01-15") # "Date of Birth (YYYY-MM-DD)", "Ex: 1990-01-15"
+
+            save_profile_button = st.form_submit_button("ప్రొఫైల్‌ను సేవ్ చేయండి") # "Save Profile"
+
+            if save_profile_button:
+                # Update DataFrame
+                users_df.loc[users_df['username'] == st.session_state.username, 'about'] = new_about
+                users_df.loc[users_df['username'] == st.session_state.username, 'dob'] = new_dob
+                users_df.to_csv(USER_CSV, index=False)
+                st.success("✅ ప్రొఫైల్ విజయవంతంగా నవీకరించబడింది!") # "Profile updated successfully!"
+                # To see changes immediately, a rerun is helpful here.
+                # However, to avoid errors, we'll let Streamlit naturally re-render
+                # or rely on the user's next interaction.
+
+        st.markdown("---")
+        st.markdown("#### మీ ప్రొఫైల్ వివరాలు") # "Your Profile Details"
+        st.write(f"**నా గురించి:** {current_user_data.get('about', 'ఇంకా వివరాలు లేవు.')}") # "About Me:", "No details yet."
+        st.write(f"**పుట్టిన తేదీ:** {current_user_data.get('dob', 'ఇంకా వివరాలు లేవు.')}") # "Date of Birth:", "No details yet."
+
+
+        st.markdown("---")
+        st.markdown("#### మీ ఇటీవలి పోస్ట్‌లు") # "Your Recent Posts"
         if not POSTS_CSV.exists() or POSTS_CSV.stat().st_size == 0:
             st.info("మీరు ఇంకా ఏ పోస్ట్‌లు చేయలేదు.")
         else:
@@ -274,7 +313,8 @@ else:
                     if post['media_path'] and os.path.exists(post['media_path']):
                         file_extension = Path(post['media_path']).suffix.lower()
                         if file_extension in [".png", ".jpg", ".jpeg", ".gif"]:
-                            st.image(post['media_path'], use_column_width="always")
+                            # FIX: use_column_width deprecated -> use_container_width
+                            st.image(post['media_path'], use_container_width=True)
                         elif file_extension in [".mp4", ".mov", ".avi", ".webm"]:
                             st.video(post['media_path'])
                         else:
@@ -282,9 +322,9 @@ else:
                             st.write(post['media_path'])
                     st.markdown("---")
 
+
     st.sidebar.markdown("---")
     if st.sidebar.button("లాగ్ అవుట్", help="మీ ఖాతా నుండి లాగ్ అవుట్ చేయడానికి క్లిక్ చేయండి."):
         st.session_state.logged_in = False
         st.session_state.username = None
-        st.session_state.login_status_message = "మీరు లాగ్ అవుట్ అయ్యారు." # Set logout message
-        # No explicit rerun here, rely on Streamlit's natural re-run due to state change
+        st.session_state.login_status_message = "మీరు లాగ్ అవుట్ అయ్యారు."
