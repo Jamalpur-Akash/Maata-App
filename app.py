@@ -76,8 +76,28 @@ elif page == "➕ Post":
                 st.success("✅ Posted successfully!")
 
 
-elif page == "👤 Profile":
+elif page == "🧑‍💼 Profile":
     st.subheader(f"👋 Hello, {st.session_state.username}")
+
+    # Upload profile photo
+    uploaded_file = st.file_uploader("Upload your profile picture", type=["png", "jpg", "jpeg"])
+    if uploaded_file is not None:
+        st.image(uploaded_file, caption="Your Profile Photo", use_column_width=True)
+        st.session_state.profile_pic = uploaded_file
+
+    # About text
+    about = st.text_area("About you", st.session_state.get("about", ""))
+    st.session_state.about = about
+
+    # Date of Birth
+    dob = st.date_input("Date of Birth", st.session_state.get("dob"))
+    st.session_state.dob = dob
+
+    # Save button
+    if st.button("Save Profile"):
+        st.success("✅ Profile updated!")
+
+    # Logout button
     if st.button("Logout"):
         st.session_state.logged_in = False
         st.rerun()
