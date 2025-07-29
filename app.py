@@ -26,7 +26,6 @@ if not USER_CSV.exists():
     pd.DataFrame(columns=["username", "password", "email", "about", "dob"]).to_csv(USER_CSV, index=False)
 else:
     # Ensure existing users.csv has 'about' and 'dob' columns
-    # This part ensures that if you run the app with an older CSV, new columns are added
     users_df_check = pd.read_csv(USER_CSV)
     if 'about' not in users_df_check.columns:
         users_df_check['about'] = ''
@@ -235,11 +234,7 @@ st.markdown(
         background-color: #45a049;
     }
     /* For the Unlike button specifically to change color */
-    /* This targets the button that has a red heart and is the 'Unlike' button */
-    /* Note: Streamlit doesn't directly expose a way to style based on content,
-       so this is a best effort based on potential internal data-testid or structure.
-       If you want a truly distinct 'Unlike' button style, you might need custom JS. */
-    .stButton>button:has(span:contains("❤️")) { /* Targets button containing red heart emoji */
+    .stButton>button:has(span:contains("❤️")) {
         background-color: #d33; /* Red color for Unlike */
     }
     .stButton>button:has(span:contains("❤️")):hover {
@@ -296,7 +291,6 @@ def login_signup():
     )
 
     # Update session state based on selection
-    # This ensures the correct form is shown on the next rerun
     if selected_auth_option == "లాగిన్":
         st.session_state.auth_view = "login"
     else:
@@ -313,7 +307,6 @@ def login_signup():
                 st.session_state.logged_in = True
                 st.session_state.username = login_username
                 st.session_state.login_status_message = f"స్వాగతం, {login_username}!"
-                # No explicit rerun needed here, the app will naturally re-render
             else:
                 st.session_state.login_status_message = "తప్పు వినియోగదారు పేరు లేదా పాస్‌వర్డ్."
 
@@ -335,9 +328,8 @@ def login_signup():
                     new_user = pd.DataFrame([{"username": signup_username, "password": signup_password, "email": "", "about": "", "dob": ""}])
                     new_user.to_csv(USER_CSV, mode='a', header=False, index=False)
                     st.session_state.login_status_message = "ఖాతా విజయవంతంగా సృష్టించబడింది! మీరు ఇప్పుడు లాగిన్ చేయవచ్చు."
-                    # After successful signup, switch to login view
-                    st.session_state.auth_view = "login"
-                    # No explicit rerun here, the app will naturally re-render
+                    st.session_state.auth_view = "login" # Switch to login view after successful signup
+
 
 # --- Main App Logic ---
 if not st.session_state.logged_in:
@@ -363,35 +355,13 @@ else:
             col_caption, col_media = st.columns([2, 1])
 
             with col_caption:
-                # --- Paste from Clipboard option ---
-                st.markdown("##### పోస్ట్ శీర్షిక") # "Post Caption"
-                # Temporary input for pasting
-                pasted_text = st.text_input(
-                    "క్లిప్‌బోర్డ్ నుండి ఇక్కడ పేస్ట్ చేయండి (Ctrl+V/Cmd+V)", # "Paste from clipboard here (Ctrl+V/Cmd+V)"
-                    key="clipboard_paste_input"
-                )
-                if st.button("శీర్షికకు కాపీ చేయండి", key="copy_to_caption"): # "Copy to Caption"
-                    if pasted_text:
-                        # Update a session state variable that holds the caption value
-                        st.session_state.current_caption_value = pasted_text
-                        st.info("క్లిప్‌బోర్డ్ నుండి శీర్షికకు కాపీ చేయబడింది.") # "Copied from clipboard to caption."
-                    else:
-                        st.warning("పేస్ట్ చేయడానికి టెక్స్ట్ బాక్స్ ఖాళీగా ఉంది.") # "Paste text box is empty."
-
-                # Initialize caption value if not set or cleared
-                if 'current_caption_value' not in st.session_state:
-                    st.session_state.current_caption_value = ""
-
+                # --- Simplified Caption Input (removed paste from clipboard) ---
                 caption = st.text_area(
-                    "ఏం జరుగుతోంది?",
-                    value=st.session_state.current_caption_value, # Use session state for value
+                    "ఏం జరుగుతోంది?", # "What's happening?"
                     height=150,
                     max_chars=500,
                     help="మీ ఆలోచనలు, భావాలు లేదా వార్తలను పంచుకోండి (గరిష్టంగా 500 అక్షరాలు)."
                 )
-                # Update session state if user types directly into caption
-                if caption != st.session_state.current_caption_value:
-                    st.session_state.current_caption_value = caption
 
                 if caption: # Character count based on the main caption text area
                     char_count = len(caption)
@@ -420,15 +390,59 @@ else:
             submitted = st.form_submit_button("పోస్ట్ చేయండి")
 
             if submitted:
-                # Clear pasted_text and current_caption_value on successful submission
-                st.session_state.current_caption_value = ""
-                # This line below attempts to clear the text_input widget directly.
-                # It's good practice to reset session state for widgets.
-                # st.session_state.clipboard_paste_input = "" # This might not clear the widget directly without rerun, but good practice.
+                # No need to clear clipboard_paste_input or current_caption_value anymore
+                # form's clear_on_submit=True will handle the text_area
 
                 if not caption.strip() and not media_file:
                     st.error("🚫 దయచేసి శీర్షికను జోడించండి లేదా భాగస్వామ్యం చేయడానికి చిత్రం/వీడియోను అప్‌లోడ్ చేయండి.")
                 elif not caption.strip():
                     st.error("🚫 మీ పోస్ట్‌కు శీర్షిక అవసరం.")
                 elif media_file and media_file.size > 5 * 1024 * 1024:
-                    st.error("🚫
+                    st.error("🚫 మీడియా ఫైల్ చాలా పెద్దది. దయచేసి 5MB కంటే తక్కువ ఫైల్‌లను అప్‌లోడ్ చేయండి.")
+                else:
+                    with st.spinner("🚀 మీ కంటెంట్‌ను పోస్ట్ చేస్తోంది... దయచేసి వేచి ఉండండి."):
+                        time.sleep(1)
+                        success = save_post(st.session_state.username, caption, media_file)
+
+                    if success:
+                        st.success("✅ మీ పోస్ట్ విజయవంతంగా భాగస్వామ్యం చేయబడింది!")
+                        st.balloons()
+                        st.rerun() # Rerun for immediate form clear and refresh
+                    else:
+                        st.error("మీ పోస్ట్‌ను సేవ్ చేయడంలో ఏదో తప్పు జరిగింది. దయచేసి మళ్లీ ప్రయత్నించండి.")
+
+    elif page == "👤 ప్రొఫైల్":
+        st.subheader(f"👤 {st.session_state.username} యొక్క ప్రొఫైల్")
+
+        users_df = pd.read_csv(USER_CSV)
+        current_user_data = users_df[users_df['username'] == st.session_state.username].iloc[0]
+
+        st.write(f"**వినియోగదారు పేరు:** {st.session_state.username}")
+
+        # Profile editing form
+        st.markdown("---")
+        st.markdown("#### ప్రొఫైల్ వివరాలను సవరించండి") # "Edit Profile Details"
+        with st.form(key="edit_profile_form"):
+            current_about = current_user_data.get('about', '')
+            current_dob = current_user_data.get('dob', '')
+
+            new_about = st.text_area("నా గురించి (About Me)", value=current_about, height=100)
+            new_dob = st.text_input("పుట్టిన తేదీ (YYYY-MM-DD)", value=current_dob, help="ఉదా: 1990-01-15")
+
+            save_profile_button = st.form_submit_button("ప్రొఫైల్‌ను సేవ్ చేయండి")
+
+            if save_profile_button:
+                users_df.loc[users_df['username'] == st.session_state.username, 'about'] = new_about
+                users_df.loc[users_df['username'] == st.session_state.username, 'dob'] = new_dob
+                users_df.to_csv(USER_CSV, index=False)
+                st.success("✅ ప్రొఫైల్ విజయవంతంగా నవీకరించబడింది!")
+                st.rerun() # Rerun to refresh displayed profile details
+
+        st.markdown("---")
+        st.markdown("#### మీ ప్రొఫైల్ వివరాలు")
+        st.write(f"**నా గురించి:** {current_user_data.get('about', 'ఇంకా వివరాలు లేవు.')}")
+        st.write(f"**పుట్టిన తేదీ:** {current_user_data.get('dob', 'ఇంకా వివరాలు లేవు.')}")
+
+
+        st.markdown("---")
+        st.markdown("#### మీ ఇటీవల
