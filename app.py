@@ -1,3 +1,15 @@
+import firebase_admin
+from firebase_admin import credentials, firestore, storage
+
+# Init Firebase
+if not firebase_admin._apps:
+    cred = credentials.Certificate("serviceAccountKey.json")
+    firebase_admin.initialize_app(cred, {
+        'storageBucket': '<your-bucket-name>.appspot.com'  # e.g., maata-app.appspot.com
+    })
+
+db = firestore.client()
+bucket = storage.bucket()
 # Our brand new app
 import streamlit as st
 import os
@@ -79,25 +91,40 @@ elif page == "➕ Post":
 elif page == "🧑‍💼 Profile":
     st.subheader(f"👋 Hello, {st.session_state.username}")
 
-    # Upload profile photo
-    uploaded_file = st.file_uploader("Upload your profile picture", type=["png", "jpg", "jpeg"])
-    if uploaded_file is not None:
-        st.image(uploaded_file, caption="Your Profile Photo", use_column_width=True)
-        st.session_state.profile_pic = uploaded_file
+    user_doc = db.collection("users").document(st.session_state.username)
 
-    # About text
-    about = st.text_area("About you", st.session_state.get("about", ""))
-    st.session_state.about = about
+    # Load previous data
+    user_data = user_doc.get().to_dict() if user_doc.get().exists else {}
 
-    # Date of Birth
-    dob = st.date_input("Date of Birth", st.session_state.get("dob"))
-    st.session_state.dob = dob
+    # Show current photo
+    if "photo_url" in user_data:
+        st.image(user_data["photo_url"], width=150)
 
-    # Save button
+    # Upload photo
+    uploaded_file = st.file_uploader("Upload Profile Picture", type=["png", "jpg", "jpeg"])
+    if uploaded_file:
+        blob = bucket.blob(f"profile_pics/{st.session_state.username}.jpg")
+        blob.upload_from_string(uploaded_file.read(), content_type=uploaded_file.type)
+        blob.make_public()
+        photo_url = blob.public_url
+    else:
+        photo_url = user_data.get("photo_url", "")
+
+    # About
+    about = st.text_area("About you", user_data.get("about", ""))
+
+    # DOB
+    dob = st.date_input("Date of Birth", user_data.get("dob"))
+
     if st.button("Save Profile"):
-        st.success("✅ Profile updated!")
+        user_doc.set({
+            "about": about,
+            "dob": str(dob),
+            "photo_url": photo_url
+        })
+        st.success("✅ Profile saved successfully!")
 
-    # Logout button
     if st.button("Logout"):
         st.session_state.logged_in = False
         st.rerun()
+
