@@ -17,15 +17,13 @@ st.set_page_config(
 STORAGE_DIR = Path("storage/uploads")
 USER_CSV = STORAGE_DIR / "users.csv"
 POSTS_CSV = STORAGE_DIR / "posts.csv"
-INTERACTIONS_CSV = STORAGE_DIR / "interactions.csv" # New CSV for likes/comments
+INTERACTIONS_CSV = STORAGE_DIR / "interactions.csv"
 
 STORAGE_DIR.mkdir(parents=True, exist_ok=True)
 
-# Initialize users.csv - ADD 'about' and 'dob' columns
 if not USER_CSV.exists():
     pd.DataFrame(columns=["username", "password", "email", "about", "dob"]).to_csv(USER_CSV, index=False)
 else:
-    # Ensure existing users.csv has 'about' and 'dob' columns
     users_df_check = pd.read_csv(USER_CSV)
     if 'about' not in users_df_check.columns:
         users_df_check['about'] = ''
@@ -34,11 +32,9 @@ else:
         users_df_check['dob'] = ''
         users_df_check.to_csv(USER_CSV, index=False)
 
-
 if not POSTS_CSV.exists():
     pd.DataFrame(columns=["post_id", "username", "timestamp", "caption", "media_path"]).to_csv(POSTS_CSV, index=False)
 
-# Initialize interactions.csv
 if not INTERACTIONS_CSV.exists():
     pd.DataFrame(columns=["interaction_id", "post_id", "username", "type", "content", "timestamp"]).to_csv(INTERACTIONS_CSV, index=False)
 
@@ -82,33 +78,55 @@ def record_interaction(post_id, username, interaction_type, content=""):
     new_interaction.to_csv(INTERACTIONS_CSV, mode='a', header=False, index=False)
     return True
 
+def remove_interaction(interaction_id):
+    """Removes a specific interaction by ID from interactions.csv."""
+    if not INTERACTIONS_CSV.exists() or INTERACTIONS_CSV.stat().st_size == 0:
+        return False
+    
+    interactions_df = pd.read_csv(INTERACTIONS_CSV)
+    original_rows = len(interactions_df)
+    
+    # Filter out the interaction to be removed
+    interactions_df = interactions_df[interactions_df['interaction_id'] != interaction_id]
+    
+    if len(interactions_df) < original_rows: # Check if something was actually removed
+        interactions_df.to_csv(INTERACTIONS_CSV, index=False)
+        return True
+    return False
+
 def get_post_interactions(post_id):
     """Retrieves likes and comments for a specific post."""
     if not INTERACTIONS_CSV.exists() or INTERACTIONS_CSV.stat().st_size == 0:
-        return {'likes': 0, 'comments': pd.DataFrame()}
+        return {'likes_count': 0, 'comments_df': pd.DataFrame(), 'user_like_id': None}
 
     interactions_df = pd.read_csv(INTERACTIONS_CSV)
     post_interactions = interactions_df[interactions_df['post_id'] == post_id]
     
-    likes = post_interactions[post_interactions['type'] == 'like'].shape[0]
-    comments = post_interactions[post_interactions['type'] == 'comment'].sort_values(by="timestamp", ascending=True) # Show oldest comments first
+    likes_data = post_interactions[post_interactions['type'] == 'like']
+    likes_count = likes_data.shape[0]
 
-    return {'likes': likes, 'comments': comments}
+    user_like_id = None
+    if st.session_state.logged_in: # Only check if user is logged in
+        user_like = likes_data[likes_data['username'] == st.session_state.username]
+        if not user_like.empty:
+            user_like_id = user_like.iloc[0]['interaction_id'] # Get the ID of the user's like
+
+    comments_df = post_interactions[post_interactions['type'] == 'comment'].sort_values(by="timestamp", ascending=True)
+
+    return {'likes_count': likes_count, 'comments_df': comments_df, 'user_like_id': user_like_id}
 
 def display_posts():
-    st.subheader("📢 కమ్యూనిటీ పోస్ట్‌లు") # "Community Posts"
+    st.subheader("📢 కమ్యూనిటీ పోస్ట్‌లు")
     if not POSTS_CSV.exists() or POSTS_CSV.stat().st_size == 0:
-        st.info("ఇంకా పోస్ట్‌లు లేవు! మొదట మీరే పంచుకోండి.") # "No posts yet! Be the first to share something."
+        st.info("ఇంకా పోస్ట్‌లు లేవు! మొదట మీరే పంచుకోండి.")
         return
 
     posts_df = pd.read_csv(POSTS_CSV).sort_values(by="timestamp", ascending=False)
 
     if posts_df.empty:
-        st.info("ఇంకా పోస్ట్‌లు లేవు! మొదట మీరే పంచుకోండి.") # "No posts yet! Be the first to share something."
+        st.info("ఇంకా పోస్ట్‌లు లేవు! మొదట మీరే పంచుకోండి.")
         return
 
-    # To ensure comments/likes update, we need a unique key for each post interaction section
-    # Use a counter for unique keys across dynamically generated content
     interaction_key_counter = 0
 
     for index, post in posts_df.iterrows():
@@ -125,65 +143,61 @@ def display_posts():
                 st.write(post['media_path'])
 
         # --- Like, Comment, Share Section ---
-        interactions = get_post_interactions(post['post_id'])
-        current_likes = interactions['likes']
-        current_comments_df = interactions['comments']
+        interactions_data = get_post_interactions(post['post_id'])
+        current_likes_count = interactions_data['likes_count']
+        current_comments_df = interactions_data['comments_df']
+        user_like_id = interactions_data['user_like_id'] # ID of the current user's like, if any
 
-        # Ensure unique keys for buttons within the loop
         interaction_key_counter += 1
         like_button_key = f"like_{post['post_id']}_{interaction_key_counter}"
         comment_button_key = f"comment_submit_{post['post_id']}_{interaction_key_counter}"
         comment_input_key = f"comment_input_{post['post_id']}_{interaction_key_counter}"
         share_button_key = f"share_{post['post_id']}_{interaction_key_counter}"
 
-
         col_like, col_comment_btn, col_share = st.columns([1, 1, 1])
 
         with col_like:
-            # Check if current user already liked this post
-            user_has_liked = False
-            if not current_comments_df.empty: # comments_df actually holds all interactions for the post
-                user_likes = current_comments_df[(current_comments_df['type'] == 'like') & (current_comments_df['username'] == st.session_state.username)]
-                if not user_likes.empty:
-                    user_has_liked = True
-
-            like_label = f"👍 ఇష్టం ({current_likes})" if not user_has_liked else f"✅ ఇష్టం ({current_likes})"
-            if st.button(like_label, key=like_button_key, help="ఈ పోస్ట్‌ను ఇష్టపడండి"):
-                if not user_has_liked:
+            if user_like_id: # User has liked
+                like_label = f"❤️ ఇష్టం లేదు ({current_likes_count})" # "Unlike"
+                if st.button(like_label, key=like_button_key, help="ఈ పోస్ట్‌ను ఇష్టం తీసివేయండి"):
+                    if remove_interaction(user_like_id):
+                        st.success("ఇష్టం తీసివేయబడింది!") # "Unlike successful!"
+                        st.rerun() # Rerun to update like count immediately
+                    else:
+                        st.error("ఇష్టం తీసివేయడంలో లోపం.") # "Error unliking."
+            else: # User has not liked
+                like_label = f"👍 ఇష్టం ({current_likes_count})" # "Like"
+                if st.button(like_label, key=like_button_key, help="ఈ పోస్ట్‌ను ఇష్టపడండి"):
                     record_interaction(post['post_id'], st.session_state.username, 'like')
-                    st.success("పోస్ట్ ఇష్టపడబడింది!") # "Post liked!"
-                    st.rerun() # Rerun to update like count immediately
-                else:
-                    st.info("మీరు ఇప్పటికే ఈ పోస్ట్‌ను ఇష్టపడ్డారు.") # "You have already liked this post."
+                    st.success("పోస్ట్ ఇష్టపడబడింది!")
+                    st.rerun()
 
         with col_comment_btn:
-            st.button(f"💬 వ్యాఖ్యలు ({current_comments_df[current_comments_df['type'] == 'comment'].shape[0]})", key=f"view_comments_{post['post_id']}_{interaction_key_counter}", disabled=True) # Just a count button
+            st.button(f"💬 వ్యాఖ్యలు ({current_comments_df.shape[0]})", key=f"view_comments_{post['post_id']}_{interaction_key_counter}", disabled=True)
 
         with col_share:
             if st.button("🔗 భాగస్వామ్యం", key=share_button_key, help="ఈ పోస్ట్‌ను భాగస్వామ్యం చేయండి"):
-                st.info("భాగస్వామ్య ఎంపికలు త్వరలో వస్తాయి!") # "Share options coming soon!"
-                # In a real app, you might show a text input with the post URL or invoke browser share API
+                st.info("భాగస్వామ్య ఎంపికలు త్వరలో వస్తాయి!")
 
-        # Comment Input Section
-        with st.expander(f"వ్యాఖ్యలను జోడించండి/చూడండి ({current_comments_df[current_comments_df['type'] == 'comment'].shape[0]})"):
-            new_comment = st.text_input("మీ వ్యాఖ్యను వ్రాయండి...", key=comment_input_key) # "Write your comment..."
-            if st.button("వ్యాఖ్యను సమర్పించండి", key=comment_button_key): # "Submit Comment"
+        with st.expander(f"వ్యాఖ్యలను జోడించండి/చూడండి ({current_comments_df.shape[0]})"):
+            new_comment = st.text_input("మీ వ్యాఖ్యను వ్రాయండి...", key=comment_input_key)
+            if st.button("వ్యాఖ్యను సమర్పించండి", key=comment_button_key):
                 if new_comment.strip():
                     record_interaction(post['post_id'], st.session_state.username, 'comment', new_comment.strip())
-                    st.success("మీ వ్యాఖ్య భాగస్వామ్యం చేయబడింది!") # "Your comment has been shared!"
-                    st.rerun() # Rerun to show the new comment immediately
+                    st.success("మీ వ్యాఖ్య భాగస్వామ్యం చేయబడింది!")
+                    st.rerun()
                 else:
-                    st.warning("దయచేసి వ్యాఖ్యను వ్రాయండి.") # "Please write a comment."
+                    st.warning("దయచేసి వ్యాఖ్యను వ్రాయండి.")
 
-            st.markdown("##### వ్యాఖ్యలు:") # "Comments:"
-            if current_comments_df[current_comments_df['type'] == 'comment'].empty:
-                st.info("ఇంకా వ్యాఖ్యలు లేవు. మొదట వ్యాఖ్యానించండి!") # "No comments yet. Be the first to comment!"
+            st.markdown("##### వ్యాఖ్యలు:")
+            if current_comments_df.empty:
+                st.info("ఇంకా వ్యాఖ్యలు లేవు. మొదట వ్యాఖ్యానించండి!")
             else:
-                for idx, comment in current_comments_df[current_comments_df['type'] == 'comment'].iterrows():
+                for idx, comment in current_comments_df.iterrows():
                     st.markdown(f"**@{comment['username']}** <small>_{comment['timestamp']}_</small>")
-                    st.write(f"&nbsp;&nbsp;&nbsp;&nbsp;{comment['content']}") # Indent comments for readability
-                
-        st.markdown("---") # Separator between posts
+                    st.write(f"&nbsp;&nbsp;&nbsp;&nbsp;{comment['content']}")
+
+        st.markdown("---")
 
 # --- Custom CSS for a professional touch ---
 st.markdown(
@@ -213,12 +227,18 @@ st.markdown(
     .stButton>button:hover {
         background-color: #45a049;
     }
+    /* For the Unlike button specifically to change color */
+    .stButton>button[data-testid*="stButton-primary"] { /* Targeting the primary style if applied */
+        background-color: #d33; /* Red color for Unlike */
+    }
+    .stButton>button[data-testid*="stButton-primary"]:hover {
+        background-color: #c00;
+    }
     .stRadio > label {
         font-size: 1.1em;
         font-weight: bold;
         color: #1a5e20;
     }
-    /* Adjusted text for better Telugu readability */
     .st-emotion-cache-16txt4v p, .st-emotion-cache-16txt4v div, .st-emotion-cache-16txt4v span {
         font-size: 1.05em;
         line-height: 1.6;
@@ -236,6 +256,8 @@ if 'username' not in st.session_state:
     st.session_state.username = None
 if 'login_status_message' not in st.session_state:
     st.session_state.login_status_message = ""
+if 'auth_view' not in st.session_state:
+    st.session_state.auth_view = "login"
 
 def login_signup():
     st.subheader("🔑 లాగిన్ / సైన్ అప్")
@@ -249,13 +271,25 @@ def login_signup():
             st.warning(st.session_state.login_status_message)
         st.session_state.login_status_message = ""
 
-    col1, col2 = st.columns(2)
+    auth_options = ["లాగిన్", "సైన్ అప్"]
+    selected_auth_option = st.radio(
+        "ఎంచుకోండి:",
+        auth_options,
+        index=0 if st.session_state.auth_view == "login" else 1,
+        key="auth_selector",
+        horizontal=True
+    )
 
-    with col1:
+    if selected_auth_option == "లాగిన్":
+        st.session_state.auth_view = "login"
+    else:
+        st.session_state.auth_view = "signup"
+
+    if st.session_state.auth_view == "login":
         st.markdown("#### ప్రస్తుత వినియోగదారు లాగిన్")
-        login_username = st.text_input("వినియోగదారు పేరు (లాగిన్)", key="login_username")
-        login_password = st.text_input("పాస్‌వర్డ్ (లాగిన్)", type="password", key="login_password")
-        if st.button("లాగిన్"):
+        login_username = st.text_input("వినియోగదారు పేరు (లాగిన్)", key="login_username_form")
+        login_password = st.text_input("పాస్‌వర్డ్ (లాగిన్)", type="password", key="login_password_form")
+        if st.button("లాగిన్", key="do_login_button"):
             users_df = pd.read_csv(USER_CSV)
             user_found = users_df[(users_df['username'] == login_username) & (users_df['password'] == login_password)]
             if not user_found.empty:
@@ -265,13 +299,12 @@ def login_signup():
             else:
                 st.session_state.login_status_message = "తప్పు వినియోగదారు పేరు లేదా పాస్‌వర్డ్."
 
-
-    with col2:
+    elif st.session_state.auth_view == "signup":
         st.markdown("#### కొత్త వినియోగదారు సైన్ అప్")
-        signup_username = st.text_input("వినియోగదారు పేరు (సైన్ అప్)", key="signup_username")
-        signup_password = st.text_input("పాస్‌వర్డ్ (సైన్ అప్)", type="password", key="signup_password")
-        signup_confirm_password = st.text_input("పాస్‌వర్డ్ నిర్ధారించండి", type="password", key="signup_confirm_password")
-        if st.button("సైన్ అప్"):
+        signup_username = st.text_input("వినియోగదారు పేరు (సైన్ అప్)", key="signup_username_form")
+        signup_password = st.text_input("పాస్‌వర్డ్ (సైన్ అప్)", type="password", key="signup_password_form")
+        signup_confirm_password = st.text_input("పాస్‌వర్డ్ నిర్ధారించండి", type="password", key="signup_confirm_password_form")
+        if st.button("సైన్ అప్", key="do_signup_button"):
             if not signup_username or not signup_password or not signup_confirm_password:
                 st.session_state.login_status_message = "దయచేసి అన్ని సైన్-అప్ ఫీల్డ్‌లను పూరించండి."
             elif signup_password != signup_confirm_password:
@@ -284,6 +317,8 @@ def login_signup():
                     new_user = pd.DataFrame([{"username": signup_username, "password": signup_password, "email": "", "about": "", "dob": ""}])
                     new_user.to_csv(USER_CSV, mode='a', header=False, index=False)
                     st.session_state.login_status_message = "ఖాతా విజయవంతంగా సృష్టించబడింది! మీరు ఇప్పుడు లాగిన్ చేయవచ్చు."
+                    st.session_state.auth_view = "login"
+
 
 # --- Main App Logic ---
 if not st.session_state.logged_in:
@@ -309,12 +344,31 @@ else:
             col_caption, col_media = st.columns([2, 1])
 
             with col_caption:
+                st.markdown("##### పోస్ట్ శీర్షిక")
+                pasted_text = st.text_input(
+                    "క్లిప్‌బోర్డ్ నుండి ఇక్కడ పేస్ట్ చేయండి (Ctrl+V/Cmd+V)",
+                    key="clipboard_paste_input"
+                )
+                if st.button("శీర్షికకు కాపీ చేయండి", key="copy_to_caption"):
+                    if pasted_text:
+                        st.session_state.current_caption_value = pasted_text
+                        st.info("క్లిప్‌బోర్డ్ నుండి శీర్షికకు కాపీ చేయబడింది.")
+                    else:
+                        st.warning("పేస్ట్ చేయడానికి టెక్స్ట్ బాక్స్ ఖాళీగా ఉంది.")
+
+                if 'current_caption_value' not in st.session_state:
+                    st.session_state.current_caption_value = ""
+
                 caption = st.text_area(
                     "ఏం జరుగుతోంది?",
+                    value=st.session_state.current_caption_value,
                     height=150,
                     max_chars=500,
                     help="మీ ఆలోచనలు, భావాలు లేదా వార్తలను పంచుకోండి (గరిష్టంగా 500 అక్షరాలు)."
                 )
+                if caption != st.session_state.current_caption_value:
+                    st.session_state.current_caption_value = caption
+
                 if caption:
                     char_count = len(caption)
                     if char_count > 450:
@@ -342,6 +396,9 @@ else:
             submitted = st.form_submit_button("పోస్ట్ చేయండి")
 
             if submitted:
+                st.session_state.current_caption_value = ""
+                st.session_state.clipboard_paste_input = ""
+
                 if not caption.strip() and not media_file:
                     st.error("🚫 దయచేసి శీర్షికను జోడించండి లేదా భాగస్వామ్యం చేయడానికి చిత్రం/వీడియోను అప్‌లోడ్ చేయండి.")
                 elif not caption.strip():
@@ -356,6 +413,7 @@ else:
                     if success:
                         st.success("✅ మీ పోస్ట్ విజయవంతంగా భాగస్వామ్యం చేయబడింది!")
                         st.balloons()
+                        st.rerun()
                     else:
                         st.error("మీ పోస్ట్‌ను సేవ్ చేయడంలో ఏదో తప్పు జరిగింది. దయచేసి మళ్లీ ప్రయత్నించండి.")
 
@@ -369,7 +427,7 @@ else:
 
         # Profile editing form
         st.markdown("---")
-        st.markdown("#### ప్రొఫైల్ వివరాలను సవరించండి") # "Edit Profile Details"
+        st.markdown("#### ప్రొఫైల్ వివరాలను సవరించండి")
         with st.form(key="edit_profile_form"):
             current_about = current_user_data.get('about', '')
             current_dob = current_user_data.get('dob', '')
@@ -384,6 +442,7 @@ else:
                 users_df.loc[users_df['username'] == st.session_state.username, 'dob'] = new_dob
                 users_df.to_csv(USER_CSV, index=False)
                 st.success("✅ ప్రొఫైల్ విజయవంతంగా నవీకరించబడింది!")
+                st.rerun()
 
         st.markdown("---")
         st.markdown("#### మీ ప్రొఫైల్ వివరాలు")
@@ -393,31 +452,4 @@ else:
 
         st.markdown("---")
         st.markdown("#### మీ ఇటీవలి పోస్ట్‌లు")
-        if not POSTS_CSV.exists() or POSTS_CSV.stat().st_size == 0:
-            st.info("మీరు ఇంకా ఏ పోస్ట్‌లు చేయలేదు.")
-        else:
-            posts_df = pd.read_csv(POSTS_CSV)
-            user_posts = posts_df[posts_df['username'] == st.session_state.username].sort_values(by="timestamp", ascending=False)
-            if user_posts.empty:
-                st.info("మీరు ఇంకా ఏ పోస్ట్‌లు చేయలేదు.")
-            else:
-                for index, post in user_posts.iterrows():
-                    st.markdown(f"**<small>_{post['timestamp']}_</small>**")
-                    st.write(post['caption'])
-                    if post['media_path'] and os.path.exists(post['media_path']):
-                        file_extension = Path(post['media_path']).suffix.lower()
-                        if file_extension in [".png", ".jpg", ".jpeg", ".gif"]:
-                            st.image(post['media_path'], use_container_width=True)
-                        elif file_extension in [".mp4", ".mov", ".avi", ".webm"]:
-                            st.video(post['media_path'])
-                        else:
-                            st.warning(f"ఈ మీడియా రకం మద్దతు లేదు {post['media_path']}. ఫైల్ మార్గం చూపుతోంది.")
-                            st.write(post['media_path'])
-                    st.markdown("---")
-
-
-    st.sidebar.markdown("---")
-    if st.sidebar.button("లాగ్ అవుట్", help="మీ ఖాతా నుండి లాగ్ అవుట్ చేయడానికి క్లిక్ చేయండి."):
-        st.session_state.logged_in = False
-        st.session_state.username = None
-        st.session_state.login_status_message = "మీరు లాగ్ అవుట్ అయ్యారు."        
+        if not POSTS_CSV.exists() 
