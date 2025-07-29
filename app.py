@@ -132,6 +132,138 @@ st.markdown(
     footer {visibility: hidden;}
     </style>
     """,
+import streamlit as st
+import pandas as pd
+import os
+import time
+import uuid # For unique filenames, especially for media uploads
+from pathlib import Path # For cleaner path handling
+
+# --- Configuration & Initial Setup ---
+
+# Set page config for a professional look
+st.set_page_config(
+    page_title="మాట - కమ్యూనిటీ", # "Maata - Community"
+    page_icon="👋",
+    layout="centered", # Can be "wide" for more space
+    initial_sidebar_state="auto"
+)
+
+# Define Storage Directories and CSV Files
+STORAGE_DIR = Path("storage/uploads")
+USER_CSV = STORAGE_DIR / "users.csv"
+POSTS_CSV = STORAGE_DIR / "posts.csv"
+
+# Ensure directories exist
+STORAGE_DIR.mkdir(parents=True, exist_ok=True)
+
+# Initialize users.csv
+if not USER_CSV.exists():
+    pd.DataFrame(columns=["username", "password", "email"]).to_csv(USER_CSV, index=False)
+
+# Initialize posts.csv
+if not POSTS_CSV.exists():
+    pd.DataFrame(columns=["post_id", "username", "timestamp", "caption", "media_path"]).to_csv(POSTS_CSV, index=False)
+
+# --- Helper Functions ---
+
+# Function to save posts
+def save_post(username, caption, media_file=None):
+    """Saves post details to CSV and media file to storage."""
+    post_id = str(uuid.uuid4()) # Generate a unique ID for the post
+    media_path = ""
+    if media_file:
+        # Create a unique filename for the uploaded media
+        file_extension = Path(media_file.name).suffix
+        media_filename = f"{post_id}{file_extension}"
+        media_path = str(STORAGE_DIR / media_filename)
+
+        # Save the media file
+        with open(media_path, "wb") as f:
+            f.write(media_file.getbuffer())
+
+    timestamp = pd.Timestamp.now().strftime("%Y-%m-%d %H:%M:%S")
+
+    new_post = pd.DataFrame([{
+        "post_id": post_id,
+        "username": username,
+        "timestamp": timestamp,
+        "caption": caption,
+        "media_path": media_path
+    }])
+    new_post.to_csv(POSTS_CSV, mode='a', header=False, index=False)
+    return True # Indicate success
+
+# Function to display posts
+def display_posts():
+    st.subheader("📢 కమ్యూనిటీ పోస్ట్‌లు") # "Community Posts"
+    if not POSTS_CSV.exists() or POSTS_CSV.stat().st_size == 0:
+        st.info("ఇంకా పోస్ట్‌లు లేవు! మొదట మీరే పంచుకోండి.") # "No posts yet! Be the first to share something."
+        return
+
+    posts_df = pd.read_csv(POSTS_CSV).sort_values(by="timestamp", ascending=False)
+
+    if posts_df.empty:
+        st.info("ఇంకా పోస్ట్‌లు లేవు! మొదట మీరే పంచుకోండి.") # "No posts yet! Be the first to share something."
+        return
+
+    for index, post in posts_df.iterrows():
+        st.markdown(f"**@{post['username']}** <small>_{post['timestamp']}_</small>")
+        st.write(post['caption'])
+        if post['media_path'] and os.path.exists(post['media_path']):
+            file_extension = Path(post['media_path']).suffix.lower()
+            if file_extension in [".png", ".jpg", ".jpeg", ".gif"]:
+                st.image(post['media_path'], use_column_width="always", caption=f"@{post['username']} ద్వారా పోస్ట్ చేయబడింది") # "Posted by @{username}"
+            elif file_extension in [".mp4", ".mov", ".avi", ".webm"]:
+                st.video(post['media_path'])
+            else:
+                st.warning(f"ఈ మీడియా రకం మద్దతు లేదు {post['media_path']}. ఫైల్ మార్గం చూపుతోంది.") # "Unsupported media type for {media_path}. Showing file path."
+                st.write(post['media_path'])
+        st.markdown("---") # Separator between posts
+
+# --- Custom CSS for a professional touch ---
+st.markdown(
+    """
+    <style>
+    /* Ensure Telugu font support */
+    body {
+        font-family: 'NATS', 'Telugu', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+    }
+    h1, h2, h3, h4, h5, h6 {
+        font-family: "Baloo Tammudu 2", 'Telugu', sans-serif; /* A bit more playful for headers */
+        color: #2e7d32; /* A nice green accent */
+    }
+    .stButton>button {
+        background-color: #4CAF50; /* Green */
+        color: white;
+        padding: 10px 24px;
+        text-align: center;
+        text-decoration: none;
+        display: inline-block;
+        font-size: 16px;
+        margin: 4px 2px;
+        cursor: pointer;
+        border-radius: 8px;
+        border: none;
+        transition: background-color 0.3s ease;
+    }
+    .stButton>button:hover {
+        background-color: #45a049;
+    }
+    /* Style for the sidebar radio buttons */
+    .stRadio > label {
+        font-size: 1.1em;
+        font-weight: bold;
+        color: #1a5e20; /* Darker green for navigation */
+    }
+    .st-emotion-cache-16txt4v p, .st-emotion-cache-16txt4v div, .st-emotion-cache-16txt4v span { /* Target general text including in Telugu */
+        font-size: 1.05em;
+        line-height: 1.6;
+    }
+    /* Remove default Streamlit footer */
+    footer {visibility: hidden;}
+    </style>
+    """,
     unsafe_allow_html=True
 )
 
@@ -157,7 +289,9 @@ def login_signup():
                 st.session_state.logged_in = True
                 st.session_state.username = login_username
                 st.success(f"స్వాగతం, {login_username}!") # "Welcome back, {username}!"
-                st.experimental_rerun() # Rerun to update UI
+                # Removed st.experimental_rerun() here. App will naturally rerun on next interaction.
+                # For immediate refresh, you might prompt user to click a 'Continue' button
+                # or rely on Streamlit's natural re-run after a success message.
             else:
                 st.error("తప్పు వినియోగదారు పేరు లేదా పాస్‌వర్డ్.") # "Invalid username or password."
 
@@ -179,6 +313,7 @@ def login_signup():
                     new_user = pd.DataFrame([{"username": signup_username, "password": signup_password, "email": ""}])
                     new_user.to_csv(USER_CSV, mode='a', header=False, index=False)
                     st.success("ఖాతా విజయవంతంగా సృష్టించబడింది! మీరు ఇప్పుడు లాగిన్ చేయవచ్చు.") # "Account created successfully! You can now login."
+                    # Removed st.experimental_rerun() here.
 
 # --- Main App Logic ---
 if not st.session_state.logged_in:
@@ -257,9 +392,10 @@ else:
                     if success:
                         st.success("✅ మీ పోస్ట్ విజయవంతంగా భాగస్వామ్యం చేయబడింది!") # "Your post has been successfully shared!"
                         st.balloons()
-                        # Optionally, switch to home page after successful post
+                        # Optionally, if you want to immediately redirect to Home after posting:
                         # st.session_state.navigation_radio = "🏠 హోమ్"
-                        # st.experimental_rerun()
+                        # This change in session_state will cause a rerun next time Streamlit evaluates
+                        # the script, effectively navigating. No explicit rerun needed here.
                     else:
                         st.error("మీ పోస్ట్‌ను సేవ్ చేయడంలో ఏదో తప్పు జరిగింది. దయచేసి మళ్లీ ప్రయత్నించండి.") # "Something went wrong while saving your post. Please try again."
 
@@ -297,7 +433,8 @@ else:
         st.session_state.logged_in = False
         st.session_state.username = None
         st.info("మీరు లాగ్ అవుట్ అయ్యారు.") # "You have been logged out."
-        st.experimental_rerun()
+        # Removed st.experimental_rerun() here. Streamlit will re-run automatically on state change
+        # or next interaction, presenting the login screen.
           
     
         
