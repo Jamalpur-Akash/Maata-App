@@ -355,6 +355,8 @@ else:
     page = st.session_state.navigation_radio
 
     if page == "🏠 హోమ్":
+        st.markdown("<h1 style='text-align: center; font-size: 48px;'>మాట 📰</h1>", unsafe_allow_html=True)
+        st.markdown("<h4 style='text-align: center; color: gray;'>స్థానిక వార్తలు మరియు కథలు</h4>", unsafe_allow_html=True)
         display_posts()
 
     elif page == "📝 పోస్ట్":
