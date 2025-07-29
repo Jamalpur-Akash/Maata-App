@@ -26,6 +26,7 @@ if not USER_CSV.exists():
     pd.DataFrame(columns=["username", "password", "email", "about", "dob"]).to_csv(USER_CSV, index=False)
 else:
     # Ensure existing users.csv has 'about' and 'dob' columns
+    # This part ensures that if you run the app with an older CSV, new columns are added
     users_df_check = pd.read_csv(USER_CSV)
     if 'about' not in users_df_check.columns:
         users_df_check['about'] = ''
@@ -206,6 +207,8 @@ def display_posts():
         st.markdown("---")
 
 # --- Custom CSS for a professional touch ---
+# This block defines the CSS styling for your Streamlit app.
+# Ensure all strings here are correctly terminated.
 st.markdown(
     """
     <style>
@@ -234,6 +237,10 @@ st.markdown(
         background-color: #45a049;
     }
     /* For the Unlike button specifically to change color */
+    /* This targets the button that has a red heart and is the 'Unlike' button */
+    /* Note: Streamlit doesn't directly expose a way to style based on content,
+       so this is a best effort based on potential internal data-testid or structure.
+       If you want a truly distinct 'Unlike' button style, you might need custom JS. */
     .stButton>button:has(span:contains("❤️")) {
         background-color: #d33; /* Red color for Unlike */
     }
@@ -274,7 +281,7 @@ def login_signup():
     if st.session_state.login_status_message:
         if "విజయవంతంగా" in st.session_state.login_status_message or "స్వాగతం" in st.session_state.login_status_message:
             st.success(st.session_state.login_status_message)
-        elif "తప్పు" in st.session_state.login_status_message or "సరిపోలడం లేదు" in st.session_state.login_status_message or "ఇప్పటికే ఉంది" in st.session_state.login_status_message:
+        elif "తప్పు" in st.session_status_message or "సరిపోలడం లేదు" in st.session_status_message or "ఇప్పటికే ఉంది" in st.session_status_message: # ERROR WAS HERE
             st.error(st.session_state.login_status_message)
         else:
             st.warning(st.session_state.login_status_message)
@@ -357,13 +364,11 @@ else:
             col_caption, col_media = st.columns([2, 1])
 
             with col_caption:
-                # --- Simplified Caption Input (Removed paste from clipboard related code) ---
                 caption = st.text_area(
                     "ఏం జరుగుతోంది?", # "What's happening?"
                     height=150,
                     max_chars=500,
                     help="మీ ఆలోచనలు, భావాలు లేదా వార్తలను పంచుకోండి (గరిష్టంగా 500 అక్షరాలు)."
-                    # The 'value' parameter is not explicitly set here, letting Streamlit manage it naturally.
                 )
 
                 if caption: # Character count based on the main caption text area
@@ -436,13 +441,4 @@ else:
                 users_df.loc[users_df['username'] == st.session_state.username, 'dob'] = new_dob
                 users_df.to_csv(USER_CSV, index=False)
                 st.success("✅ ప్రొఫైల్ విజయవంతంగా నవీకరించబడింది!")
-                st.rerun() # Rerun to refresh displayed profile details
-
-        st.markdown("---")
-        st.markdown("#### మీ ప్రొఫైల్ వివరాలు")
-        st.write(f"**నా గురించి:** {current_user_data.get('about', 'ఇంకా వివరాలు లేవు.')}")
-        st.write(f"**పుట్టిన తేదీ:** {current_user_data.get('dob', 'ఇంకా వివరాలు లేవు.')}")
-
-
-        st.markdown("---")
-        st.markdown("#### మీ ఇటీవలి పోస్ట్‌
+                st.rerun() # Rerun to refresh displayed profile details        
