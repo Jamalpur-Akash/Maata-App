@@ -447,8 +447,10 @@ else:
                 st.success("✅ ప్రొఫైల్ విజయవంతంగా నవీకరించబడింది!")
                 st.rerun() # Rerun to refresh displayed profile details
 
-st.sidebar.markdown("---")
-if st.sidebar.button("🚪 లాగ్అవుట్"):
-    st.session_state.logged_in = False
-    st.session_state.username = ""
-    st.rerun()
+                
+                st.sidebar.markdown("---")
+                if st.sidebar.button("🚪 లాగ్అవుట్"):
+                    
+                    st.session_state.logged_in = False
+                    st.session_state.username = ""
+                    st.rerun()
