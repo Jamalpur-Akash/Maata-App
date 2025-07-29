@@ -217,4 +217,4 @@ else:
     elif option == "🔓 లాగ్ అవుట్":
         st.session_state.logged_in = False
         st.session_state.username = None
-        st.experimental_rerun()
+        st.stop()
