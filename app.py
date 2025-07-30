@@ -67,7 +67,8 @@ def login_signup():
             if not df_users[(df_users.username==u)&(df_users.password==p)].empty:
                 st.session_state.logged_in = True
                 st.session_state.username = u
-                st.experimental_rerun()
+                st.success(t("లాగిన్ విజయవంతం", "लॉगिन सफल", "Login successful"))
+                st.stop()
             else:
                 st.error(t("తప్పుడు వ్యక్తీకరణ","गलत क्रेडेंशियल","Incorrect credentials"))
     else:
