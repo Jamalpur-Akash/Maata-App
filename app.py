@@ -138,7 +138,7 @@ else:
             st.markdown(f"**@{uname}** _{ts}_")
             st.write(cap)
             if media_path and Path(media_path).exists():
-                st.image(media_path, use_column_width=True)
+                st.image(media_path, use_container_width=True)
             if uname == st.session_state.username:
                 if st.button(t("తొలగించండి","हटाएं","Delete"), key=r['post_id']):
                     delete_post(r['post_id'])
