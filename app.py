@@ -1,144 +1,148 @@
 import streamlit as st
 import pandas as pd
-import os
-import time
 import uuid
+import os
 from datetime import datetime
-from pathlib import Path
-from deep_translator import GoogleTranslator
 import pytz
+from pathlib import Path
 
-st.set_page_config(page_title="Maata Project", layout="centered")
+st.set_page_config(page_title="మాట - కమ్యూనిటీ", page_icon="🌸", layout="centered")
+
 STORAGE_DIR = Path("storage/uploads")
+USER_CSV = STORAGE_DIR / "users.csv"
+POSTS_CSV = STORAGE_DIR / "posts.csv"
+INTERACTIONS_CSV = STORAGE_DIR / "interactions.csv"
 STORAGE_DIR.mkdir(parents=True, exist_ok=True)
 
+if not USER_CSV.exists():
+    pd.DataFrame(columns=["username","password","email","about","dob"]).to_csv(USER_CSV, index=False)
+if not POSTS_CSV.exists():
+    pd.DataFrame(columns=["post_id","username","timestamp","caption","media_path"]).to_csv(POSTS_CSV, index=False)
+
+LANG_MAP = {"తెలుగు":"te","हिन्दी":"hi","English":"en"}
+if "lang" not in st.session_state:
+    st.session_state.lang = "తెలుగు"
+
+def t(te,hi,en):
+    return {"తెలుగు":te,"हिन्दी":hi,"English":en}[st.session_state.lang]
+
+lang_choice = st.selectbox("🌐 Language / భాష / भाषा", list(LANG_MAP.keys()), key="lang_choice")
+st.session_state.lang = lang_choice
+
+def load_csv(path):
+    return pd.read_csv(path) if path.exists() else pd.DataFrame()
+
+def save_post(username, caption, media_file):
+    df = load_csv(POSTS_CSV)
+    ts = datetime.now(pytz.timezone('Asia/Kolkata')).strftime("%Y-%m-%d %H:%M:%S %Z")
+    media_path = ""
+    if media_file:
+        ext = Path(media_file.name).suffix
+        media_filename = f"{uuid.uuid4().hex}{ext}"
+        media_path = str(STORAGE_DIR / media_filename)
+        with open(media_path, "wb") as f:
+            f.write(media_file.getbuffer())
+    df.loc[len(df)] = [str(uuid.uuid4()), username, ts, caption or "", media_path]
+    df.to_csv(POSTS_CSV, index=False)
+
+def delete_post(post_id):
+    df = load_csv(POSTS_CSV)
+    df = df[df["post_id"] != post_id]
+    df.to_csv(POSTS_CSV, index=False)
+
+if "logged_in" not in st.session_state:
+    st.session_state.logged_in = False
 if "username" not in st.session_state:
-    st.session_state.username = "Nanda kishor Reddy"
+    st.session_state.username = ""
 
-if "language" not in st.session_state:
-    st.session_state.language = "Telugu"
+def login_signup():
+    st.header(t("మాట కమ్యూనిటీ", "माटा कम्युनिटी", "Maata Community"))
+    choice = st.radio("", [t("పైన", "ऊपर", "Login"), t("సైన్ అప్", "रजिस्टर", "Sign up")])
+    df_users = load_csv(USER_CSV)
 
-lang_map = {
-    "Telugu": "te",
-    "Hindi": "hi",
-    "English": "en"
-}
-
-def translate_text(text, lang_code):
-    try:
-        return GoogleTranslator(source='auto', target=lang_code).translate(text)
-    except Exception:
-        return text
-
-POSTS_FILE = "posts.csv"
-
-def load_posts():
-    if os.path.exists(POSTS_FILE):
-        return pd.read_csv(POSTS_FILE)
+    if choice == t("పైన","ऊपर","Login"):
+        u = st.text_input(t("వినియోగదారు పేరు","उपयोगकर्ता नाम","Username"))
+        p = st.text_input(t("పాస్వర్డ్","पासवर्ड","Password"), type="password")
+        if st.button(t("లాగిన్","लॉग इन","Login")):
+            if not df_users[(df_users.username==u)&(df_users.password==p)].empty:
+                st.session_state.logged_in = True
+                st.session_state.username = u
+                st.experimental_rerun()
+            else:
+                st.error(t("తప్పుడు వ్యక్తీకరణ","गलत क्रेडेंशियल","Incorrect credentials"))
     else:
-        return pd.DataFrame(columns=["id", "username", "text", "image_path", "timestamp"])
+        u = st.text_input(t("వినియోగదారు పేరు","उपयोगकर्ता नाम","Username"), key="su_user")
+        e = st.text_input("Email")
+        p = st.text_input(t("పాస్వర్డ్","पासवर्ड","Password"), type="password", key="su_pass")
+        pc = st.text_input(t("నిర్ధారించు పాస్‌వర్డ్","पासवर्ड पुनः दर्ज करें","Confirm Password"), type="password")
+        if st.button(t("సైన్ అప్","रजिस्टर","Sign up")):
+            if u in df_users.username.values:
+                st.warning(t("మీరు ఇప్పటికే నమోదు అయ్యారు","आप पहले से रजिस्टर्ड हैं","You are already registered"))
+            elif p != pc:
+                st.error(t("పాస్‌వర్డ్‌లు సరిపోలేదు","पासवर्ड मेल नहीं खाते","Passwords do not match"))
+            else:
+                new = {"username":u,"password":p,"email":e,"about":"","dob":""}
+                df_users.loc[len(df_users)] = new
+                df_users.to_csv(USER_CSV,index=False)
+                st.success(t("నమోదు విజయవంతం!","रजिस्टर सफल!","Registration successful!"))
 
-def save_post(username, text, image_path):
-    df = load_posts()
-    post_id = str(uuid.uuid4())
-    timestamp = datetime.now(pytz.timezone("Asia/Kolkata")).strftime("%Y-%m-%d %H:%M:%S")
-    new_post = {"id": post_id, "username": username, "text": text, "image_path": image_path, "timestamp": timestamp}
-    df = pd.concat([pd.DataFrame([new_post]), df], ignore_index=True)
-    df.to_csv(POSTS_FILE, index=False)
+if not st.session_state.logged_in:
+    login_signup()
+else:
+    st.sidebar.title(f"{t('హలో','नमस्ते','Hello')}, {st.session_state.username}")
+    nav = st.sidebar.radio(t("నావిగేషన్","नेविगेशन","Navigation"),
+        [t("హోమ్","होम","Home"), t("కొత్త పోస్ట్","नई पोस्ट","New Post"),
+         t("ప్రొఫైల్","प्रोफ़ाइल","Profile"), t("లాగ్ అవుట్","लॉग आउट","Logout")])
 
-LIKES_FILE = "likes.csv"
-COMMENTS_FILE = "comments.csv"
-
-def load_likes():
-    if os.path.exists(LIKES_FILE):
-        return pd.read_csv(LIKES_FILE)
-    else:
-        return pd.DataFrame(columns=["post_id", "username"])
-
-def save_like(post_id, username):
-    df = load_likes()
-    if not ((df.post_id == post_id) & (df.username == username)).any():
-        df = pd.concat([df, pd.DataFrame([{"post_id": post_id, "username": username}])], ignore_index=True)
-        df.to_csv(LIKES_FILE, index=False)
-
-def count_likes(post_id):
-    df = load_likes()
-    return len(df[df.post_id == post_id])
-
-def load_comments():
-    if os.path.exists(COMMENTS_FILE):
-        return pd.read_csv(COMMENTS_FILE)
-    else:
-        return pd.DataFrame(columns=["post_id", "username", "comment", "timestamp"])
-
-def save_comment(post_id, username, comment):
-    df = load_comments()
-    timestamp = datetime.now(pytz.timezone("Asia/Kolkata")).strftime("%Y-%m-%d %H:%M:%S")
-    new_comment = {"post_id": post_id, "username": username, "comment": comment, "timestamp": timestamp}
-    df = pd.concat([df, pd.DataFrame([new_comment])], ignore_index=True)
-    df.to_csv(COMMENTS_FILE, index=False)
-
-def get_comments(post_id):
-    df = load_comments()
-    return df[df.post_id == post_id]
-
-st.sidebar.markdown(f"### Hello, {st.session_state.username}")
-page = st.sidebar.radio("Navigation", ["Home", "New Post", "Profile", "Logout"])
-
-lang_option = st.selectbox("🌐 Language / भाषा / భాష", ["Telugu", "Hindi", "English"])
-st.session_state.language = lang_option
-lang_code = lang_map[st.session_state.language]
-
-if page == "Home":
-    st.markdown(f"### 📢 {translate_text('Posts', lang_code)}")
-
-    df = load_posts()
-    for _, row in df.iterrows():
-        st.markdown(f"**@{row['username']}** ⏰ {row['timestamp']}")
-        st.write(translate_text(row['text'], lang_code))
-        if row["image_path"] and os.path.exists(row["image_path"]):
-            st.image(row["image_path"], use_container_width=True)
-
-        if st.button(f"👍 {translate_text('Like', lang_code)}", key=f"like_{row['id']}"):
-            save_like(row['id'], st.session_state.username)
-            st.experimental_rerun()
-        st.caption(f"{count_likes(row['id'])} 👍")
-
-        comment = st.text_input(f"{translate_text('Add a comment', lang_code)}:", key=f"comment_input_{row['id']}")
-        if st.button(translate_text("Post Comment", lang_code), key=f"comment_btn_{row['id']}"):
-            save_comment(row['id'], st.session_state.username, comment)
-            st.experimental_rerun()
-
-        for _, comment_row in get_comments(row['id']).iterrows():
-            st.markdown(f"💬 **{comment_row['username']}**: {comment_row['comment']}")
-
-        st.markdown("🔗 " + translate_text("Share link: ", lang_code) + f"https://yourapp.com/post/{row['id']}")
-        st.markdown("---")
-
-elif page == "New Post":
-    st.markdown(f"### ✍️ {translate_text('Create a Post', lang_code)}")
-    text = st.text_area(translate_text("What's on your mind?", lang_code))
-
-    image = st.file_uploader(translate_text("Upload an image", lang_code), type=["jpg", "jpeg", "png"])
-
-    if st.button(translate_text("Post", lang_code)):
-        image_path = ""
-        if image:
-            image_path = str(STORAGE_DIR / f"{uuid.uuid4()}.png")
-            with open(image_path, "wb") as f:
-                f.write(image.read())
-        save_post(st.session_state.username, text, image_path)
-        st.success(translate_text("Posted successfully!", lang_code))
+    if nav == t("లాగ్ అవుట్","लॉग आउट","Logout"):
+        st.session_state.logged_in = False
+        st.session_state.username = ""
         st.experimental_rerun()
 
-elif page == "Profile":
-    st.markdown(f"### 🙍‍♂️ {translate_text('Your Profile', lang_code)}")
-    st.image("https://cdn-icons-png.flaticon.com/512/149/149071.png", width=100)
-    st.write("**Username:**", st.session_state.username)
-    st.write("**Email:** example@example.com")
-    st.write("**About:** Passionate user of Maata Project.")
-    st.write("**DOB:** 01-01-2000")
+    elif nav == t("ప్రొఫైల్","प्रोफ़ाइल","Profile"):
+        st.header(t("ప్రొఫైల్","प्रोफ़ाइल","Profile"))
+        u = st.session_state.username
+        df = load_csv(USER_CSV)
+        row = df[df.username==u].iloc[0]
+        st.image("https://cdn-icons-png.flaticon.com/512/847/847969.png", width=100)
+        st.write(f"**{t('వినియోగదారు పేరు','उपयोगकर्ता नाम','Username')}:** {row.username}")
+        st.write(f"**Email:** {row.email}")
+        st.write(f"**{t('నా గురించి','मेरे बारे में','About')}:** {row.about or t('లభించలేదు','उपलब्ध नहीं','Not available')}")
+        st.write(f"**{t('పుట్టిన తేదీ','जन्म तिथि','Date of Birth')}:** {row.dob or t('లభించలేదు','उपलब्ध नहीं','Not available')}")
+        about = st.text_area(t("నా గురించి","मेरे बारे में","About"), row.about)
+        dob = st.text_input(t("పుట్టిన తేదీ","जन्म तिथि","Date of Birth"), value=row.dob)
+        if st.button(t("సేవ్ చేద్దాం","सेव करें","Save")):
+            df.loc[df.username==u,"about"] = about
+            df.loc[df.username==u,"dob"] = dob
+            df.to_csv(USER_CSV,index=False)
+            st.success(t("నవీకరణ పూర్తయింది!","अपडेट हो गया!","Updated!"))
 
-elif page == "Logout":
-    st.session_state.username = ""
-    st.success(translate_text("Logged out successfully.", lang_code))
+    elif nav == t("కొత్త పోస్ట్","नई पोस्ट","New Post"):
+        st.header(t("కొత్త పోస్ట్","नई पोस्ट","New Post"))
+        caption = st.text_area(t("ఈ రోజు ఏమైంది మీకెంతో మాట్లాడండి...","आज क्या है साझा करें...","Share what's happening..."), key="post_text")
+        media = st.file_uploader(t("మీడియా జోడించండి","मीडिया जोड़ें","Add Media"), type=["png","jpg","jpeg","mp4"])
+        if st.button(t("పోస్ట్","पोस्ट करें","Post")):
+            save_post(st.session_state.username, caption, media)
+            st.success(t("పోస్ట్ విజయవంతంగా పంపబడింది","पोस्ट सफलतापूर्वक भेजी गई","Post successfully shared"))
+            st.experimental_rerun()
+
+    else:
+        st.header("📢 " + t("పోస్టులు","पोस्ट्स","Posts"))
+        dfp = load_csv(POSTS_CSV)
+        dfp = dfp.sort_values(by="timestamp", ascending=False)
+        for _, r in dfp.iterrows():
+            uname = r.get("username","")
+            cap = r.get("caption","")
+            ts = r.get("timestamp","")
+            media_path = r.get("media_path","")
+            st.markdown(f"**@{uname}** _{ts}_")
+            st.write(cap)
+            if media_path and Path(media_path).exists():
+                st.image(media_path, use_container_width=True)
+            if uname == st.session_state.username:
+                if st.button(t("తొలగించండి","हटाएं","Delete"), key=r['post_id']):
+                    delete_post(r['post_id'])
+                    st.success(t("పోస్ట్ తొలగించబడింది","पोस्ट हटायी गई","Post deleted"))
+                    st.experimental_rerun()
+            st.markdown("---")
+    
