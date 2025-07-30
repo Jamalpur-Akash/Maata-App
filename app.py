@@ -97,8 +97,14 @@ def post_section():
     for _, row in posts_df.iterrows():
         st.markdown(f"**@{row['username']}**")
         st.write(t(row['caption']))
-        if row["media_path"] and Path(row["media_path"]).exists():
-            st.image(row["media_path"], width=300)
+
+        if row["media_path"]:
+            try:
+                if Path(row["media_path"]).exists():
+                    st.image(row["media_path"], use_container_width=True)
+            except:
+                st.warning(t("చిత్రాన్ని లోడ్ చేయలేకపోయాం"))
+
         if row['username'] == st.session_state.username:
             if st.button(t("🗑️ ఈ పోస్ట్‌ను తీసివేయి"), key=row['post_id']):
                 posts_df = posts_df[posts_df['post_id'] != row['post_id']]
@@ -110,6 +116,7 @@ def post_section():
                     os.remove(row["media_path"])
                 st.success(t("పోస్ట్ తొలగించబడింది"))
                 st.stop()
+
 
 if not st.session_state.logged_in:
     login_signup()
