@@ -82,7 +82,7 @@ if not st.session_state.user:
             df = load_users()
             if uname in df['username'].values and df[df['username']==uname]['password'].iloc[0] == pwd:
                 st.session_state.user = uname
-                st.experimental_rerun()
+                st.stop()
             else:
                 st.error(t("తప్పు సమాచారం", "गलत जानकारी", "Incorrect credentials"))
 
@@ -140,4 +140,4 @@ else:
         if row['username'] == st.session_state.user:
             if st.button(t("తొలగించండి", "हटाएं", "Delete"), key=f"del_{i}"):
                 delete_post(i)
-                st.experimental_rerun()
+                st.stop()
