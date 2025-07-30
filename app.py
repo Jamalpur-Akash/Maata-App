@@ -1,147 +1,142 @@
 import streamlit as st
 import pandas as pd
-import uuid
 import os
+import time
+import uuid
 from datetime import datetime
 import pytz
-from pathlib import Path
 
-st.set_page_config(page_title="మాట - కమ్యూనిటీ", page_icon="🌸", layout="centered")
+st.set_page_config(page_title="మాట ప్రాజెక్ట్", layout="centered")
 
-STORAGE_DIR = Path("storage/uploads")
-USER_CSV = STORAGE_DIR / "users.csv"
-POSTS_CSV = STORAGE_DIR / "posts.csv"
-INTERACTIONS_CSV = STORAGE_DIR / "interactions.csv"
-STORAGE_DIR.mkdir(parents=True, exist_ok=True)
+if 'language' not in st.session_state:
+    st.session_state.language = 'te'
 
-if not USER_CSV.exists():
-    pd.DataFrame(columns=["username","password","email","about","dob"]).to_csv(USER_CSV, index=False)
-if not POSTS_CSV.exists():
-    pd.DataFrame(columns=["post_id","username","timestamp","caption","media_path"]).to_csv(POSTS_CSV, index=False)
+lang_options = {
+    'te': 'తెలుగు',
+    'hi': 'हिंदी',
+    'en': 'English'
+}
 
-LANG_MAP = {"తెలుగు":"te","हिन्दी":"hi","English":"en"}
-if "lang" not in st.session_state:
-    st.session_state.lang = "తెలుగు"
+translations = {
+    'post': {'te': 'పోస్ట్', 'hi': 'पोस्ट', 'en': 'Post'},
+    'home': {'te': 'హోమ్', 'hi': 'होम', 'en': 'Home'},
+    'new_post': {'te': 'కొత్త పోస్ట్', 'hi': 'नई पोस्ट', 'en': 'New Post'},
+    'profile': {'te': 'ప్రొఫైల్', 'hi': 'प्रोफाइल', 'en': 'Profile'},
+    'logout': {'te': 'లాగ్ అవుట్', 'hi': 'लॉग आउट', 'en': 'Logout'},
+    'already_registered': {'te': 'మీరు ఇప్పటికే నమోదు చేసుకున్నారు', 'hi': 'आप पहले ही रजिस्टर कर चुके हैं', 'en': 'You are already registered'},
+}
 
-def t(te,hi,en):
-    return {"తెలుగు":te,"हिन्दी":hi,"English":en}[st.session_state.lang]
+def t(key):
+    return translations.get(key, {}).get(st.session_state.language, key)
 
-lang_choice = st.selectbox("🌐 Language / భాష / भाषा", list(LANG_MAP.keys()), key="lang_choice")
-st.session_state.lang = lang_choice
+st.selectbox("🌐", options=list(lang_options.keys()), format_func=lambda x: lang_options[x], key="language")
 
-def load_csv(path):
-    return pd.read_csv(path) if path.exists() else pd.DataFrame()
+PERSIST_FILE = "posts.csv"
+PROFILE_FILE = "profiles.csv"
 
-def save_post(username, caption, media_file):
-    df = load_csv(POSTS_CSV)
-    ts = datetime.now(pytz.timezone('Asia/Kolkata')).strftime("%Y-%m-%d %H:%M:%S %Z")
-    media_path = ""
-    if media_file:
-        ext = Path(media_file.name).suffix
-        media_filename = f"{uuid.uuid4().hex}{ext}"
-        media_path = str(STORAGE_DIR / media_filename)
-        with open(media_path, "wb") as f:
-            f.write(media_file.getbuffer())
-    df.loc[len(df)] = [str(uuid.uuid4()), username, ts, caption or "", media_path]
-    df.to_csv(POSTS_CSV, index=False)
+def load_posts():
+    if os.path.exists(PERSIST_FILE):
+        return pd.read_csv(PERSIST_FILE)
+    return pd.DataFrame(columns=["id", "username", "text", "image", "timestamp"])
 
-def delete_post(post_id):
-    df = load_csv(POSTS_CSV)
-    df = df[df["post_id"] != post_id]
-    df.to_csv(POSTS_CSV, index=False)
+def save_posts(posts):
+    posts.to_csv(PERSIST_FILE, index=False)
 
-if "logged_in" not in st.session_state:
-    st.session_state.logged_in = False
-if "username" not in st.session_state:
-    st.session_state.username = ""
+def load_profiles():
+    if os.path.exists(PROFILE_FILE):
+        return pd.read_csv(PROFILE_FILE)
+    return pd.DataFrame(columns=["username", "email", "about", "dob", "photo"])
 
-def login_signup():
-    st.header(t("మాట కమ్యూనిటీ", "माटा कम्युनिटी", "Maata Community"))
-    choice = st.radio("", [t("పైన", "ऊपर", "Login"), t("సైన్ అప్", "रजिस्टर", "Sign up")])
-    df_users = load_csv(USER_CSV)
+def save_profiles(df):
+    df.to_csv(PROFILE_FILE, index=False)
 
-    if choice == t("పైన","ऊपर","Login"):
-        u = st.text_input(t("వినియోగదారు పేరు","उपयोगकर्ता नाम","Username"))
-        p = st.text_input(t("పాస్వర్డ్","पासवर्ड","Password"), type="password")
-        if st.button(t("లాగిన్","लॉग इन","Login")):
-            if not df_users[(df_users.username==u)&(df_users.password==p)].empty:
-                st.session_state.logged_in = True
-                st.session_state.username = u
-                st.stop()
-            else:
-                st.error(t("తప్పుడు వ్యక్తీకరణ","गलत क्रेडेंशियल","Incorrect credentials"))
-    else:
-        u = st.text_input(t("వినియోగదారు పేరు","उपयोगकर्ता नाम","Username"), key="su_user")
-        e = st.text_input("Email")
-        p = st.text_input(t("పాస్వర్డ్","पासवर्ड","Password"), type="password", key="su_pass")
-        pc = st.text_input(t("నిర్ధారించు పాస్‌వర్డ్","पासवर्ड पुनः दर्ज करें","Confirm Password"), type="password")
-        if st.button(t("సైన్ అప్","रजिस्टर","Sign up")):
-            if u in df_users.username.values:
-                st.warning(t("మీరు ఇప్పటికే నమోదు అయ్యారు","आप पहले से रजिस्टर्ड हैं","You are already registered"))
-            elif p != pc:
-                st.error(t("పాస్‌వర్డ్‌లు సరిపోలేదు","पासवर्ड मेल नहीं खाते","Passwords do not match"))
-            else:
-                new = {"username":u,"password":p,"email":e,"about":"","dob":""}
-                df_users.loc[len(df_users)] = new
-                df_users.to_csv(USER_CSV,index=False)
-                st.success(t("నమోదు విజయవంతం!","रजिस्टर सफल!","Registration successful!"))
+def display_post(row):
+    st.markdown(f"**@{row['username']}** ({row['timestamp']})")
+    st.write(row['text'])
+    if row['image'] and os.path.exists(row['image']):
+        st.image(row['image'], use_container_width=True)
 
-if not st.session_state.logged_in:
-    login_signup()
-else:
-    st.sidebar.title(f"{t('హలో','नमस्ते','Hello')}, {st.session_state.username}")
-    nav = st.sidebar.radio(t("నావిగేషన్","नेविगेशन","Navigation"),
-        [t("హోమ్","होम","Home"), t("కొత్త పోస్ట్","नई पोस्ट","New Post"),
-         t("ప్రొఫైల్","प्रोफ़ाइल","Profile"), t("లాగ్ అవుట్","लॉग आउट","Logout")])
-
-    if nav == t("లాగ్ అవుట్","लॉग_OUT","Logout"):
-        st.session_state.logged_in = False
-        st.session_state.username = ""
-        st.experimental_rerun()
-
-    elif nav == t("ప్రొఫైల్","प्रोफ़ाइल","Profile"):
-        st.header(t("ప్రొఫైల్","प्रोफ़ाइल","Profile"))
-        u = st.session_state.username
-        df = load_csv(USER_CSV)
-        row = df[df.username==u].iloc[0]
-        st.image("https://cdn-icons-png.flaticon.com/512/847/847969.png", width=100)
-        st.write(f"**{t('వినియోగదారు పేరు','उपयोगकर्ता नाम','Username')}:** {row.username}")
-        st.write(f"**Email:** {row.email}")
-        st.write(f"**{t('నా గురించి','मेरे बारे में','About')}:** {row.about or t('లభించలేదు','उपलब्ध नहीं','Not available')}")
-        st.write(f"**{t('పుట్టిన తేదీ','जन्म तिथि','Date of Birth')}:** {row.dob or t('లభించలేదు','उपलब्ध नहीं','Not available')}")
-        if st.button(t("సేవ్ చేద్దాం","सेव करें","Save")):
-            about = st.text_area(t("నా గురించి","मेरे बारे में","About"), row.about)
-            dob = st.text_input(t("పుట్టిన తేదీ","जन्म तिथि","Date of Birth"), value=row.dob)
-            df.loc[df.username==u,"about"] = about
-            df.loc[df.username==u,"dob"] = dob
-            df.to_csv(USER_CSV,index=False)
-            st.success(t("నవీకరణ పూర్తయింది!","अपडेट हो गया!","Updated!"))
-
-    elif nav == t("కొత్త పోస్ట్","नई पोस्ट","New Post"):
-        st.header(t("కొత్త పోస్ట్","नई पोस्ट","New Post"))
-        caption = st.text_area(t("ఈ రోజు ఏమైంది మీకెంతో మాట్లాడండి...","आज क्या है साझा करें...","Share what's happening..."), key="post_text")
-        media = st.file_uploader(t("మీడియా జోడించండి","मीडिया जोड़ें","Add Media"), type=["png","jpg","jpeg","mp4"])
-        if st.button(t("పోస్ట్","पोस्ट करें","Post")):
-            save_post(st.session_state.username, caption, media)
-            st.success(t("పోస్ట్ విజయవంతంగా పంపబడింది","पोस्ट सफलतापूर्वक भेजी गई","Post successfully shared"))
+    if st.session_state.username == row['username']:
+        if st.button("🗑️ Delete", key=f"del_{row['id']}"):
+            posts_df.drop(posts_df[posts_df['id'] == row['id']].index, inplace=True)
+            save_posts(posts_df)
             st.experimental_rerun()
 
+def profile_ui():
+    st.subheader(t('profile'))
+    profiles = load_profiles()
+    profile = profiles[profiles['username'] == st.session_state.username]
+
+    if not profile.empty:
+        data = profile.iloc[0]
+        st.image("default_profile_icon.png", width=80)
+        st.write(f"**Email:** {data['email']}")
+        st.write(f"**About:** {data['about']}")
+        st.write(f"**DOB:** {data['dob']}")
     else:
-        st.header("📢 " + t("పోస్టులు","पोस्ट्स","Posts"))
-        dfp = load_csv(POSTS_CSV)
-        dfp = dfp.sort_values(by="timestamp", ascending=False)
-        for _, r in dfp.iterrows():
-            uname = r.get("username","")
-            cap = r.get("caption","")
-            ts = r.get("timestamp","")
-            media_path = r.get("media_path","")
-            st.markdown(f"**@{uname}** _{ts}_")
-            st.write(cap)
-            if media_path and Path(media_path).exists():
-                st.image(media_path, use_column_width=True)
-            if uname == st.session_state.username:
-                if st.button(t("తొలగించండి","हटाएं","Delete"), key=r['post_id']):
-                    delete_post(r['post_id'])
-                    st.success(t("పోస్ట్ తొలగించబడింది","पोस्ट हटायी गई","Post deleted"))
-                    st.experimental_rerun()
-            st.markdown("---")
+        st.warning("Profile not found.")
+
+def signup_ui():
+    st.title("సైన్ అప్")
+    username = st.text_input("Username")
+    email = st.text_input("Email")
+    about = st.text_area("About")
+    dob = st.date_input("Date of Birth")
+    if st.button("Register"):
+        profiles = load_profiles()
+        if username in profiles["username"].values:
+            st.error(t("already_registered"))
+        else:
+            new = pd.DataFrame([{"username": username, "email": email, "about": about, "dob": dob, "photo": "default_profile_icon.png"}])
+            save_profiles(pd.concat([profiles, new], ignore_index=True))
+            st.success("Registered! Please reload to login.")
+
+def new_post_ui():
+    st.subheader(t('new_post'))
+    text = st.text_area("Say something...")
+    image = st.file_uploader("Upload Image", type=["png", "jpg", "jpeg"])
+    img_path = None
+    if image:
+        img_path = os.path.join("storage", f"{uuid.uuid4()}.png")
+        with open(img_path, "wb") as f:
+            f.write(image.getbuffer())
+    if st.button("Post"):
+        now = datetime.now(pytz.timezone("Asia/Kolkata")).strftime("%Y-%m-%d %H:%M:%S")
+        new = pd.DataFrame([{"id": str(uuid.uuid4()), "username": st.session_state.username, "text": text, "image": img_path, "timestamp": now}])
+        save_posts(pd.concat([posts_df, new], ignore_index=True))
+        st.success("Posted!")
+        st.experimental_rerun()
+
+def home_ui():
+    st.subheader(t("post"))
+    for _, row in posts_df[::-1].iterrows():
+        display_post(row)
+
+def sidebar():
+    st.sidebar.title("నావిగేషన్")
+    page = st.sidebar.radio("", [t("home"), t("new_post"), t("profile"), t("logout")])
+    return page
+
+def login_ui():
+    st.title("లాగిన్")
+    username = st.text_input("Username")
+    if st.button("Login"):
+        st.session_state.username = username
+        st.experimental_rerun()
+
+if 'username' not in st.session_state:
+    login_ui()
+else:
+    posts_df = load_posts()
+    st.sidebar.markdown(f"👋 హలో, {st.session_state.username}")
+    page = sidebar()
+
+    if page == t("home"):
+        home_ui()
+    elif page == t("new_post"):
+        new_post_ui()
+    elif page == t("profile"):
+        profile_ui()
+    elif page == t("logout"):
+        del st.session_state.username
+        st.experimental_rerun()
