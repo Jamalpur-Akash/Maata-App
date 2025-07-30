@@ -70,7 +70,11 @@ def like_post(post_id, user):
 
 def count_likes(post_id):
     df = load_csv(INTERACTIONS_CSV)
-    return len(df[(df.post_id == post_id) & (df.action == "like")])
+    if "post_id" not in df.columns or df.empty:
+        return 0
+    df["post_id"] = df["post_id"].astype(str)
+    return len(df[(df["post_id"] == post_id) & (df["action"] == "like")])
+
 
 def add_comment(post_id, username, comment):
     df = load_csv(COMMENTS_CSV)
