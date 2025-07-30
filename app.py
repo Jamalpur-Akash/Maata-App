@@ -21,6 +21,10 @@ for file, cols in {
     if not file.exists():
         pd.DataFrame(columns=cols).to_csv(file, index=False)
 
+lang_choice = st.selectbox("🌐 Language / భాష / भाषा", ["తెలుగు", "हिन्दी", "English"])
+lang_map = {"తెలుగు": "te", "हिन्दी": "hi", "English": "en"}
+st.session_state.lang = lang_map[lang_choice]
+
 def t(text):
     lang = st.session_state.get("lang", "te")
     if lang == "te":
@@ -34,11 +38,8 @@ if 'logged_in' not in st.session_state:
     st.session_state.logged_in = False
 if 'username' not in st.session_state:
     st.session_state.username = None
-if 'lang' not in st.session_state:
-    st.session_state.lang = 'te'
 
 st.markdown("<h1 style='text-align:center;'>🌸 మాట ప్రాజెక్ట్</h1>", unsafe_allow_html=True)
-st.session_state.lang = st.selectbox("భాష ఎంచుకోండి | Select Language", options=["te", "hi", "en"], format_func=lambda x: {"te": "తెలుగు", "hi": "हिन्दी", "en": "English"}[x])
 
 def login_signup():
     mode = st.radio(t("మోడ్ ఎంచుకోండి"), [t("లాగిన్"), t("సైన్ అప్")])
@@ -124,3 +125,4 @@ else:
         st.stop()
     else:
         post_section()
+        
