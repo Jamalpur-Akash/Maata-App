@@ -4,7 +4,7 @@
 # 📖 MAATA – An AI-Powered Streamlit App
 
 > Built as part of Summer of AI 2025 under Swecha Telangana  
-> Team Size: 5 Members  
+> Team Size: 4 Members  
 > Duration: 4 Weeks (1 Week Build, 1 Week Test, 2 Weeks User Growth)
 
 ---
