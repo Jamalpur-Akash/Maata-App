@@ -53,10 +53,9 @@ def save_post(username, caption, media_file=None):
         "caption": caption,
         "media_path": media_path
     }]).to_csv(POSTS_CSV, mode='a', header=False, index=False)
-
     save_file_to_hub(str(POSTS_CSV))
-        if media_path:
-            save_file_to_hub(media_path)
+    if media_path:
+        save_file_to_hub(media_path)
 
 def delete_post(post_id):
     posts_df = pd.read_csv(POSTS_CSV)
