@@ -8,16 +8,20 @@ jobs:
   sync:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          lfs: true
 
       - name: Push to HuggingFace
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
         run: |
+          cd /tmp
+          git clone https://Maata-team:$HF_TOKEN@huggingface.co/spaces/Maata-team/Maata-App hf_repo
+          cd hf_repo
+          rsync -av --exclude='.git' --exclude='storage/uploads' $GITHUB_WORKSPACE/ .
           git config user.email "sync@github.com"
           git config user.name "GitHub Sync"
-          git remote add hf https://Maata-team:$HF_TOKEN@huggingface.co/spaces/Maata-team/Maata-App
-          git push hf main --force
+          git add .
+          git diff --staged --quiet || git commit -m "Sync from GitHub"
+          git push
