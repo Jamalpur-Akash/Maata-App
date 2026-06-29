@@ -34,29 +34,23 @@ Justification:
 
 ---
 
-## 📝 Sample Message for Promotion:
-
- 
-
 ## 🧪 Engagement Plan:
 
-- Offer small **shoutouts** or display usernames of top tweeters on our app
-- Add a “🔥 Trending tweet” section to keep users engaged
+- Offer small **shoutouts** or display usernames of top contributers on our app
+- Add a “🔥 Trending posts” section to keep users engaged
  
-
 ---
 
- 
 ## 📊 Success Metrics
 
 We will measure success based on:
 - 📥 Number of unique users visiting the app
-- 📝 Number of tweets submitted (corpus units)
+- 📝 Number of posts submitted (corpus units)
 - 💬 User feedback on language support, UI.
 
 Target:
 - **100 users**
-- **200 tweets**
+- **200 posts**
  
 ---
 
