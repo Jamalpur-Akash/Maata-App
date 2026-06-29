@@ -152,7 +152,7 @@ if 'auth_view' not in st.session_state:
     st.session_state.auth_view = "login"
 
 def login_signup():
-    st.title("మాట - తెలుగు కమ్యూనిటీ 🌸")
+    st.title("మాట - తెలుగు కమ్యూనిటీ 📰")
     st.markdown("మీ భావాలను పంచుకోండి, ఇతరులతో అనుభవం ఆవిష్కరించండి!")
     option = st.radio("మెను ఎంచుకోండి", ["లాగిన్", "సైన్ అప్"])
     if option == "లాగిన్":
