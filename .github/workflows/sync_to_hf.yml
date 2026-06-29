@@ -1,0 +1,23 @@
+name: Sync to HuggingFace
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+          lfs: true
+
+      - name: Push to HuggingFace
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: |
+          git config user.email "sync@github.com"
+          git config user.name "GitHub Sync"
+          git remote add hf https://Maata-team:$HF_TOKEN@huggingface.co/spaces/Maata-team/Maata-App
+          git push hf main --force
