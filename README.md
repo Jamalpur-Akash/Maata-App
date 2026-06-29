@@ -38,5 +38,15 @@ It is designed to collect and upload data from users in Telugu language—making
 
 - **Frontend** : [Streamlit](https://streamlit.io/)
 - **AI Model** : HuggingFace Transformers – Helsinki-NLP/opus-mt
-- **Backend** : Python
+- **Storage** : HuggingFace Datasets (persistent)
 - **Deployment** : Hugging Face Spaces
+- **CI/CD** : GitHub Actions (auto-sync to HuggingFace)
+- **Backend** : Python
+
+---
+
+## 👥 Contributors
+- Jamalpur Akash
+- Samhit Macherla
+- Akhil putta
+- Nanda Kishor
