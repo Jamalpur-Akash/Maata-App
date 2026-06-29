@@ -4,8 +4,13 @@ import os
 import time
 import uuid
 from pathlib import Path
+from persistence import load_all_from_hub, save_file_to_hub
 
-st.set_page_config(page_title="మాట - కమ్యూనిటీ", page_icon="🌸", layout="centered")
+if 'hub_loaded' not in st.session_state:
+    load_all_from_hub()
+    st.session_state.hub_loaded = True
+
+st.set_page_config(page_title="మాట - కమ్యూనిటీ", page_icon="📰", layout="centered")
 
 STORAGE_DIR = Path("storage/uploads")
 USER_CSV = STORAGE_DIR / "users.csv"
@@ -48,6 +53,10 @@ def save_post(username, caption, media_file=None):
         "caption": caption,
         "media_path": media_path
     }]).to_csv(POSTS_CSV, mode='a', header=False, index=False)
+
+    save_file_to_hub(str(POSTS_CSV))
+        if media_path:
+            save_file_to_hub(media_path)
 
 def delete_post(post_id):
     posts_df = pd.read_csv(POSTS_CSV)
@@ -172,6 +181,7 @@ def login_signup():
             else:
                 new = pd.DataFrame([{"username": user, "password": pwd, "email": email, "about": "", "dob": ""}])
                 new.to_csv(USER_CSV, mode="a", header=False, index=False)
+                save_file_to_hub(str(USER_CSV))
                 st.success("సైన్ అప్ విజయవంతం! లాగిన్ చేయండి.")
                 st.session_state.auth_view = "login"
                 st.rerun()
