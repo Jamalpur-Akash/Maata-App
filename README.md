@@ -18,9 +18,9 @@ It is designed to collect and upload data from users in Telugu language—making
 ---
 
 ## 📸 App Screenshots
-![Login Page](Screenshot 2026-06-30 014543.png)
-![Home Page](Screenshot 2026-06-30 014641.png)
-![Upload Page](Screenshot 2026-06-30 014739.png)
+![Login Page](screenshots/Screenshot%202026-06-30%20014543.png)
+![Home Page](screenshots/Screenshot%202026-06-30%20014641.png)
+![Upload Page](screenshots/Screenshot%202026-06-30%20014739.png)
 
 ---
 
