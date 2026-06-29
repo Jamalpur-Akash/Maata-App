@@ -17,6 +17,14 @@ It is designed to collect and upload data from users in Telugu language—making
 
 ---
 
+## 📸 App Screenshots
+![Home Page](screenshots/home.png)
+![Login Page](screenshots/login.png)
+![Upload Page](screenshots/login.png)
+
+
+
+
 ## 🎯 Project Goals
 
 - ✍🏻 Allow users to create content in Telugu 
