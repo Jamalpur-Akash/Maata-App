@@ -1,3 +1,6 @@
+## 🔗 Live App
+👉 [Click here to open Maata App](https://huggingface.co/spaces/Maata-team/Maata-App)
+
 # 📖 MAATA – An AI-Powered Streamlit App
 
 > Built as part of Summer of AI 2025 under Swecha Telangana  
